@@ -1,0 +1,9 @@
+# Commande pour les petites features, debug et modifications
+command: /epct
+description: "Pattern Expliciter-Proposer-Coder-Tester pour modifications légères"
+instructions: |
+  Tu dois suivre rigoureusement ces étapes :
+  1. EXPLICITER : Analyse le code existant et le besoin (ex: ajouter un champ au formulaire).
+  2. PROPOSER : Explique la modification technique dans Nuxt 3.
+  3. CODER : Génère le bloc de code complet à remplacer ou ajouter.
+  4. TESTER : Donne la méthode pour vérifier que la feature fonctionne.

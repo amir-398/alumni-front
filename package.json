@@ -1,0 +1,33 @@
+{
+  "name": "alumni-front",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@formkit/auto-animate": "0.9.0",
+    "@iconify-json/lucide": "^1.2.90",
+    "@iconify-json/simple-icons": "^1.2.70",
+    "@nuxt/image": "2.0.0",
+    "@nuxt/ui": "^4.4.0",
+    "@nuxtjs/google-fonts": "3.2.0",
+    "nuxt": "^4.3.1",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.6",
+    "zod-i18n-map": "^2.27.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.15.1",
+    "@types/node": "^25.2.3",
+    "eslint": "^10.0.0",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.29.3"
+}
