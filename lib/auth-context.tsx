@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 
-export type UserRole = "admin" | "alumni"
+export type UserRole = "admin" | "alumni" | "staff"
 
 export interface User {
   id: string
@@ -60,6 +60,14 @@ const MOCK_USERS: (User & { password: string })[] = [
     role: "alumni",
     promoYear: 2021,
     diploma: "Master Finance",
+  },
+  {
+    id: "staff-1",
+    email: "staff@ecole-multimedia.com",
+    password: "staff123",
+    firstName: "Julie",
+    lastName: "Moreau",
+    role: "staff",
   },
 ]
 

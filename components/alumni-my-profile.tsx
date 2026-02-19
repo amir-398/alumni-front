@@ -1,17 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { mockAlumni } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 import {
-  Edit3,
-  Save,
-  X,
   ExternalLink,
   MapPin,
   Briefcase,
@@ -22,9 +17,7 @@ import {
 
 export function AlumniMyProfile() {
   const { user } = useAuth()
-  const [isEditing, setIsEditing] = useState(false)
 
-  // Try to find matching alumni data, otherwise construct from user info
   const alumniData = mockAlumni.find(
     (a) => a.email.toLowerCase() === user?.email?.toLowerCase()
   ) || {
@@ -43,17 +36,11 @@ export function AlumniMyProfile() {
     avatarUrl: null,
   }
 
-  const [editData, setEditData] = useState({ ...alumniData })
-
-  const handleSave = () => {
-    setIsEditing(false)
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-xl font-bold text-foreground">Mon profil</h2>
-        <p className="text-sm text-muted-foreground">Gerez vos informations personnelles</p>
+        <p className="text-sm text-muted-foreground">Vos informations personnelles (lecture seule)</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -117,53 +104,18 @@ export function AlumniMyProfile() {
           </CardContent>
         </Card>
 
-        {/* Editable Details */}
+        {/* Read-only Details */}
         <Card className="lg:col-span-2 border border-border">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Mes informations</CardTitle>
-            {!isEditing ? (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
-                <Edit3 className="w-4 h-4" />
-                Modifier
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => { setIsEditing(false); setEditData({ ...alumniData }) }} className="gap-2">
-                  <X className="w-4 h-4" />
-                  Annuler
-                </Button>
-                <Button size="sm" onClick={handleSave} className="gap-2">
-                  <Save className="w-4 h-4" />
-                  Sauvegarder
-                </Button>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-semibold text-foreground mb-6">Mes informations</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Prenom</Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.firstName}
-                    onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumniData.firstName}</p>
-                )}
+                <p className="mt-1 text-foreground font-medium">{alumniData.firstName}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Nom</Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.lastName}
-                    onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumniData.lastName}</p>
-                )}
+                <p className="mt-1 text-foreground font-medium">{alumniData.lastName}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Email</Label>
@@ -174,14 +126,7 @@ export function AlumniMyProfile() {
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">LinkedIn</Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.linkedinUrl}
-                    onChange={(e) => setEditData({ ...editData, linkedinUrl: e.target.value })}
-                    className="mt-1"
-                    placeholder="https://linkedin.com/in/..."
-                  />
-                ) : alumniData.linkedinUrl ? (
+                {alumniData.linkedinUrl ? (
                   <a href={alumniData.linkedinUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block text-primary hover:underline truncate">
                     <ExternalLink className="w-3 h-3 inline mr-1" />
                     {alumniData.linkedinUrl}
@@ -192,39 +137,15 @@ export function AlumniMyProfile() {
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Poste actuel</Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.currentJob}
-                    onChange={(e) => setEditData({ ...editData, currentJob: e.target.value })}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumniData.currentJob}</p>
-                )}
+                <p className="mt-1 text-foreground font-medium">{alumniData.currentJob}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Entreprise</Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.currentCompany}
-                    onChange={(e) => setEditData({ ...editData, currentCompany: e.target.value })}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumniData.currentCompany}</p>
-                )}
+                <p className="mt-1 text-foreground font-medium">{alumniData.currentCompany}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Ville</Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.city}
-                    onChange={(e) => setEditData({ ...editData, city: e.target.value })}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumniData.city}</p>
-                )}
+                <p className="mt-1 text-foreground font-medium">{alumniData.city}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Diplome</Label>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useAuth } from "@/lib/auth-context"
 import { mockAlumni, type Alumni } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   Search,
   ExternalLink,
@@ -30,6 +40,7 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
+  Plus,
 } from "lucide-react"
 import { AlumniProfile } from "@/components/alumni-profile"
 
@@ -37,6 +48,8 @@ type SortField = "lastName" | "promoYear" | "diploma" | "status"
 type SortDir = "asc" | "desc"
 
 export function AlumniDirectory() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === "admin"
   const [search, setSearch] = useState("")
   const [filterDiploma, setFilterDiploma] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
@@ -44,6 +57,7 @@ export function AlumniDirectory() {
   const [sortField, setSortField] = useState<SortField>("lastName")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
   const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null)
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
 
   const diplomas = useMemo(() => [...new Set(mockAlumni.map((a) => a.diploma))], [])
   const promos = useMemo(() => [...new Set(mockAlumni.map((a) => a.promoYear))].sort((a, b) => b - a), [])
@@ -115,14 +129,97 @@ export function AlumniDirectory() {
           <p className="text-sm text-muted-foreground">{filtered.length} alumni trouves</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Upload className="w-4 h-4" />
-            <span className="hidden sm:inline">Importer CSV</span>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Exporter</span>
-          </Button>
+          {isAdmin && <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Ajouter un alumni</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Ajouter un alumni</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="add-firstname">Prenom</Label>
+                    <Input id="add-firstname" placeholder="Prenom" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-lastname">Nom</Label>
+                    <Input id="add-lastname" placeholder="Nom" className="mt-1" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="add-email">Email</Label>
+                  <Input id="add-email" type="email" placeholder="email@example.com" className="mt-1" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="add-diploma">Diplome</Label>
+                    <Select>
+                      <SelectTrigger id="add-diploma" className="mt-1">
+                        <SelectValue placeholder="Choisir" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {diplomas.map((d) => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="add-promo">Promotion</Label>
+                    <Select>
+                      <SelectTrigger id="add-promo" className="mt-1">
+                        <SelectValue placeholder="Annee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {promos.map((p) => (
+                          <SelectItem key={p} value={p.toString()}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="add-linkedin">LinkedIn</Label>
+                  <Input id="add-linkedin" placeholder="https://linkedin.com/in/..." className="mt-1" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="add-job">Poste</Label>
+                    <Input id="add-job" placeholder="Poste actuel" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-company">Entreprise</Label>
+                    <Input id="add-company" placeholder="Entreprise" className="mt-1" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="add-city">Ville</Label>
+                  <Input id="add-city" placeholder="Ville" className="mt-1" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Annuler</Button>
+                <Button onClick={() => setAddDialogOpen(false)}>Ajouter</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>}
+          {isAdmin && (
+            <>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">Importer CSV</span>
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Exporter</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

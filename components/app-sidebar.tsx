@@ -10,7 +10,6 @@ import {
   CalendarDays,
   ClipboardList,
   LogOut,
-  Search,
   UserCircle,
 } from "lucide-react"
 import Image from "next/image"
@@ -28,12 +27,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["admin"] },
-  { id: "directory", label: "Annuaire", icon: Users, roles: ["admin", "alumni"] },
-  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["admin", "alumni"] },
-  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["admin", "alumni"] },
-  { id: "logs", label: "Historique", icon: ClipboardList, roles: ["admin"] },
-  { id: "search-alumni", label: "Rechercher", icon: Search, roles: ["alumni"] },
+  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["admin", "staff"] },
+  { id: "directory", label: "Annuaire", icon: Users, roles: ["admin", "staff"] },
+  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["admin", "alumni", "staff"] },
+  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["admin", "alumni", "staff"] },
+  { id: "logs", label: "Historique", icon: ClipboardList, roles: ["admin", "staff"] },
   { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni"] },
 ]
 
@@ -66,7 +64,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
             ? "bg-sidebar-primary/20 text-sidebar-primary"
             : "bg-sidebar-accent text-sidebar-accent-foreground"
         )}>
-          {user?.role === "admin" ? "Administration" : "Espace Alumni"}
+          {user?.role === "admin" ? "Administration" : user?.role === "staff" ? "Staff" : "Espace Alumni"}
         </span>
       </div>
 
