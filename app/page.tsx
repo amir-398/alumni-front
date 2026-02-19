@@ -11,19 +11,17 @@ import { JobBoard } from "@/components/job-board"
 import { EventsModule } from "@/components/events-module"
 import { LogsModule } from "@/components/logs-module"
 import { AlumniMyProfile } from "@/components/alumni-my-profile"
-import { AlumniSearch } from "@/components/alumni-search"
 
 export default function Page() {
   const { isAuthenticated, user } = useAuth()
   const [activeTab, setActiveTab] = useState("")
 
-  // Set default tab based on role
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === "admin") {
+      if (user.role === "admin" || user.role === "staff") {
         setActiveTab("dashboard")
       } else {
-        setActiveTab("directory")
+        setActiveTab("jobs")
       }
     }
   }, [isAuthenticated, user])
@@ -32,7 +30,7 @@ export default function Page() {
     return <AuthPage />
   }
 
-  const isAdmin = user?.role === "admin"
+  const role = user?.role
 
   return (
     <div className="flex h-screen bg-background">
@@ -41,15 +39,13 @@ export default function Page() {
         <MobileHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-            {/* Admin views */}
-            {isAdmin && activeTab === "dashboard" && <DashboardOverview />}
-            {isAdmin && activeTab === "directory" && <AlumniDirectory />}
-            {isAdmin && activeTab === "logs" && <LogsModule />}
+            {/* Admin & Staff views */}
+            {(role === "admin" || role === "staff") && activeTab === "dashboard" && <DashboardOverview />}
+            {(role === "admin" || role === "staff") && activeTab === "directory" && <AlumniDirectory />}
+            {(role === "admin" || role === "staff") && activeTab === "logs" && <LogsModule />}
 
             {/* Alumni views */}
-            {!isAdmin && activeTab === "directory" && <AlumniSearch />}
-            {!isAdmin && activeTab === "search-alumni" && <AlumniSearch />}
-            {!isAdmin && activeTab === "my-profile" && <AlumniMyProfile />}
+            {role === "alumni" && activeTab === "my-profile" && <AlumniMyProfile />}
 
             {/* Shared views */}
             {activeTab === "jobs" && <JobBoard />}

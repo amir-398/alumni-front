@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "@/lib/auth-context"
 import type { Alumni } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,6 +38,8 @@ interface AlumniProfileProps {
 }
 
 export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
+  const { user } = useAuth()
+  const isAdmin = user?.role === "admin"
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({ ...alumni })
   const [contactOpen, setContactOpen] = useState(false)
@@ -183,12 +186,13 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
         <Card className="lg:col-span-2 border border-border">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Informations detaillees</CardTitle>
-            {!isEditing ? (
+            {isAdmin && !isEditing && (
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
                 <Edit3 className="w-4 h-4" />
                 Modifier
               </Button>
-            ) : (
+            )}
+            {isAdmin && isEditing && (
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => { setIsEditing(false); setEditData({ ...alumni }) }} className="gap-2">
                   <X className="w-4 h-4" />

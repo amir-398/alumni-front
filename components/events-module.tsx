@@ -2,11 +2,30 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useAuth } from "@/lib/auth-context"
 import { mockEvents, type Event } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   CalendarDays,
   Clock,
@@ -17,6 +36,8 @@ import {
   Mic2,
   BookOpen,
   CheckCircle,
+  Plus,
+  Pencil,
 } from "lucide-react"
 
 const typeConfig: Record<Event["type"], { label: string; icon: React.ElementType; color: string }> = {
@@ -27,8 +48,12 @@ const typeConfig: Record<Event["type"], { label: string; icon: React.ElementType
 }
 
 export function EventsModule() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === "admin"
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all")
   const [rsvpEvents, setRsvpEvents] = useState<Set<string>>(new Set())
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
 
   const filtered = mockEvents.filter((e) => {
     if (filter === "all") return true
@@ -55,6 +80,69 @@ export function EventsModule() {
           <p className="text-sm text-muted-foreground">{filtered.length} evenements</p>
         </div>
         <div className="flex gap-2">
+          {isAdmin && (
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Ajouter
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Creer un evenement</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <Label htmlFor="event-title">Titre</Label>
+                    <Input id="event-title" placeholder="Nom de l'evenement" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="event-desc">Description</Label>
+                    <Textarea id="event-desc" placeholder="Decrivez l'evenement..." rows={3} className="mt-1" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="event-date">Date</Label>
+                      <Input id="event-date" type="date" className="mt-1" />
+                    </div>
+                    <div>
+                      <Label htmlFor="event-time">Heure</Label>
+                      <Input id="event-time" type="time" className="mt-1" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="event-location">Lieu</Label>
+                    <Input id="event-location" placeholder="Adresse du lieu" className="mt-1" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="event-type">Type</Label>
+                      <Select defaultValue="afterwork">
+                        <SelectTrigger id="event-type" className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gala">Gala</SelectItem>
+                          <SelectItem value="afterwork">Afterwork</SelectItem>
+                          <SelectItem value="conference">Conference</SelectItem>
+                          <SelectItem value="workshop">Workshop</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="event-max">Places max</Label>
+                      <Input id="event-max" type="number" placeholder="100" className="mt-1" />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Annuler</Button>
+                  <Button onClick={() => setAddDialogOpen(false)}>Creer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
           {(["all", "upcoming", "past"] as const).map((f) => (
             <Button
               key={f}
@@ -67,6 +155,65 @@ export function EventsModule() {
           ))}
         </div>
       </div>
+
+      {/* Edit event dialog */}
+      <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier l&apos;evenement</DialogTitle>
+          </DialogHeader>
+          {editingEvent && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <Label htmlFor="edit-event-title">Titre</Label>
+                <Input id="edit-event-title" defaultValue={editingEvent.title} className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="edit-event-desc">Description</Label>
+                <Textarea id="edit-event-desc" defaultValue={editingEvent.description} rows={3} className="mt-1" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-event-date">Date</Label>
+                  <Input id="edit-event-date" type="date" defaultValue={editingEvent.date} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="edit-event-time">Heure</Label>
+                  <Input id="edit-event-time" type="time" defaultValue={editingEvent.time} className="mt-1" />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-event-location">Lieu</Label>
+                <Input id="edit-event-location" defaultValue={editingEvent.location} className="mt-1" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-event-type">Type</Label>
+                  <Select defaultValue={editingEvent.type}>
+                    <SelectTrigger id="edit-event-type" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gala">Gala</SelectItem>
+                      <SelectItem value="afterwork">Afterwork</SelectItem>
+                      <SelectItem value="conference">Conference</SelectItem>
+                      <SelectItem value="workshop">Workshop</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-event-max">Places max</Label>
+                  <Input id="edit-event-max" type="number" defaultValue={editingEvent.maxAttendees} className="mt-1" />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingEvent(null)}>Annuler</Button>
+            <Button onClick={() => setEditingEvent(null)}>Sauvegarder</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filtered.map((event) => {
@@ -96,6 +243,17 @@ export function EventsModule() {
                     </div>
                     <CardTitle className="text-base">{event.title}</CardTitle>
                   </div>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 shrink-0"
+                      onClick={() => setEditingEvent(event)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                      <span className="sr-only">Modifier</span>
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
