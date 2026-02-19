@@ -1,9 +1,9 @@
-description = "Creates a comprehensive PRP (Product Requirement Prompt) for a new JumpBoard v3 feature."
+description = "Creates a comprehensive PRP (Product Requirement Prompt) for a Alumni front feature."
 
 prompt = """
 # Create PRP (Product Requirement Prompt)
 
-You are tasked with creating a comprehensive PRP for a new feature in JumpBoard v3.
+You are tasked with creating a comprehensive PRP for a new feature in Alumni front.
 
 ## What is a PRP?
 
