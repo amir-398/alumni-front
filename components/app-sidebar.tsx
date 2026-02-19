@@ -1,44 +1,79 @@
 "use client"
 
+import type React from "react"
 import { cn } from "@/lib/utils"
+import { useAuth, type UserRole } from "@/lib/auth-context"
 import {
   Users,
   LayoutDashboard,
   Briefcase,
   CalendarDays,
   ClipboardList,
-  GraduationCap,
+  LogOut,
+  Search,
+  UserCircle,
 } from "lucide-react"
+import Image from "next/image"
 
 interface AppSidebarProps {
   activeTab: string
   onTabChange: (tab: string) => void
 }
 
-const navItems = [
-  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { id: "directory", label: "Annuaire", icon: Users },
-  { id: "jobs", label: "Annonces", icon: Briefcase },
-  { id: "events", label: "Evenements", icon: CalendarDays },
-  { id: "logs", label: "Historique", icon: ClipboardList },
+interface NavItem {
+  id: string
+  label: string
+  icon: React.ElementType
+  roles: UserRole[]
+}
+
+const navItems: NavItem[] = [
+  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["admin"] },
+  { id: "directory", label: "Annuaire", icon: Users, roles: ["admin", "alumni"] },
+  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["admin", "alumni"] },
+  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["admin", "alumni"] },
+  { id: "logs", label: "Historique", icon: ClipboardList, roles: ["admin"] },
+  { id: "search-alumni", label: "Rechercher", icon: Search, roles: ["alumni"] },
+  { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni"] },
 ]
 
 export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
+  const { user, logout } = useAuth()
+
+  const visibleItems = navItems.filter(
+    (item) => user && item.roles.includes(user.role)
+  )
+
   return (
     <aside className="hidden lg:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-sidebar-primary">
-          <GraduationCap className="w-5 h-5 text-sidebar-primary-foreground" />
-        </div>
-        <div>
-          <h1 className="text-base font-semibold text-sidebar-foreground">Alumni Hub</h1>
-          <p className="text-xs text-sidebar-foreground/60">Espace Admin</p>
-        </div>
+      {/* Logo header */}
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border">
+        <Image
+          src="/images/logo-ecole-multimedia.svg"
+          alt="Logo Ecole Multimedia"
+          width={160}
+          height={44}
+          className="h-9 w-auto brightness-0 invert"
+          priority
+        />
       </div>
 
-      <nav className="flex-1 px-3 py-4">
+      {/* Role badge */}
+      <div className="px-5 pt-4 pb-2">
+        <span className={cn(
+          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+          user?.role === "admin"
+            ? "bg-sidebar-primary/20 text-sidebar-primary"
+            : "bg-sidebar-accent text-sidebar-accent-foreground"
+        )}>
+          {user?.role === "admin" ? "Administration" : "Espace Alumni"}
+        </span>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-2">
         <ul className="flex flex-col gap-1">
-          {navItems.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.id}>
               <button
                 onClick={() => onTabChange(item.id)}
@@ -57,15 +92,27 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         </ul>
       </nav>
 
+      {/* User footer */}
       <div className="px-4 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-accent-foreground">
-            AD
+          <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-xs font-semibold text-sidebar-primary">
+            {user?.firstName?.[0]}{user?.lastName?.[0]}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">Admin Principal</p>
-            <p className="text-xs text-sidebar-foreground/60 truncate">admin@ecole.fr</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
+              {user?.firstName} {user?.lastName}
+            </p>
+            <p className="text-xs text-sidebar-foreground/60 truncate">
+              {user?.email}
+            </p>
           </div>
+          <button
+            onClick={logout}
+            className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-sidebar-foreground/60 hover:text-sidebar-foreground"
+            aria-label="Se deconnecter"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>

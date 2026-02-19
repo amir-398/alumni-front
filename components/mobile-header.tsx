@@ -1,56 +1,96 @@
 "use client"
 
+import type React from "react"
 import { cn } from "@/lib/utils"
+import { useAuth, type UserRole } from "@/lib/auth-context"
 import {
   Users,
   LayoutDashboard,
   Briefcase,
   CalendarDays,
   ClipboardList,
-  GraduationCap,
+  LogOut,
   Menu,
   X,
+  Search,
+  UserCircle,
 } from "lucide-react"
 import { useState } from "react"
+import Image from "next/image"
 
 interface MobileHeaderProps {
   activeTab: string
   onTabChange: (tab: string) => void
 }
 
-const navItems = [
-  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { id: "directory", label: "Annuaire", icon: Users },
-  { id: "jobs", label: "Annonces", icon: Briefcase },
-  { id: "events", label: "Evenements", icon: CalendarDays },
-  { id: "logs", label: "Historique", icon: ClipboardList },
+interface NavItem {
+  id: string
+  label: string
+  icon: React.ElementType
+  roles: UserRole[]
+}
+
+const navItems: NavItem[] = [
+  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["admin"] },
+  { id: "directory", label: "Annuaire", icon: Users, roles: ["admin", "alumni"] },
+  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["admin", "alumni"] },
+  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["admin", "alumni"] },
+  { id: "logs", label: "Historique", icon: ClipboardList, roles: ["admin"] },
+  { id: "search-alumni", label: "Rechercher", icon: Search, roles: ["alumni"] },
+  { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni"] },
 ]
 
 export function MobileHeader({ activeTab, onTabChange }: MobileHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const { user, logout } = useAuth()
+
+  const visibleItems = navItems.filter(
+    (item) => user && item.roles.includes(user.role)
+  )
 
   return (
     <header className="lg:hidden border-b border-border bg-card">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
-            <GraduationCap className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <h1 className="text-base font-semibold text-foreground">Alumni Hub</h1>
+          <Image
+            src="/images/logo-ecole-multimedia.svg"
+            alt="Logo Ecole Multimedia"
+            width={130}
+            height={36}
+            className="h-8 w-auto"
+            priority
+          />
         </div>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Toggle menu"
-        >
-          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={logout}
+            className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+            aria-label="Se deconnecter"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {isOpen && (
         <nav className="px-3 pb-3">
+          <div className="mb-2 px-3 py-2">
+            <p className="text-sm font-medium text-foreground">
+              {user?.firstName} {user?.lastName}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {user?.role === "admin" ? "Administration" : "Espace Alumni"}
+            </p>
+          </div>
           <ul className="flex flex-col gap-1">
-            {navItems.map((item) => (
+            {visibleItems.map((item) => (
               <li key={item.id}>
                 <button
                   onClick={() => {

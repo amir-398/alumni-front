@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "@/lib/auth-context"
 import { mockJobs, type JobType } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +42,8 @@ const typeColors: Record<JobType, string> = {
 }
 
 export function JobBoard() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === "admin"
   const [filterType, setFilterType] = useState("all")
   const [search, setSearch] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -66,12 +69,14 @@ export function JobBoard() {
           <p className="text-sm text-muted-foreground">{filtered.length} offres disponibles</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Publier une offre
-            </Button>
-          </DialogTrigger>
+          {isAdmin && (
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Publier une offre
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Publier une offre</DialogTitle>
