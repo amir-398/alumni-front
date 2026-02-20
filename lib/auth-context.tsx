@@ -17,30 +17,16 @@ export interface User {
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
+  hasSuperAdmin: boolean
+  superAdminEmail: string | null
+  superAdminPassword: string | null
   login: (email: string, password: string) => { success: boolean; error?: string }
-  register: (data: RegisterData) => { success: boolean; error?: string }
+  registerSuperAdmin: (data: { email: string; password: string; firstName: string; lastName: string }) => { success: boolean; error?: string }
   logout: () => void
 }
 
-interface RegisterData {
-  email: string
-  password: string
-  firstName: string
-  lastName: string
-  promoYear?: number
-  diploma?: string
-}
-
-// Mock users database
+// Mock users database - starts WITHOUT a super_admin to simulate first-time setup
 const MOCK_USERS: (User & { password: string })[] = [
-  {
-    id: "superadmin-1",
-    email: "superadmin@ecole-multimedia.com",
-    password: "super123",
-    firstName: "Pierre",
-    lastName: "Lefebvre",
-    role: "super_admin",
-  },
   {
     id: "admin-1",
     email: "admin@ecole-multimedia.com",
@@ -83,6 +69,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [hasSuperAdmin, setHasSuperAdmin] = useState(() =>
+    MOCK_USERS.some((u) => u.role === "super_admin")
+  )
+  const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(() => {
+    const sa = MOCK_USERS.find((u) => u.role === "super_admin")
+    return sa?.email ?? null
+  })
+  const [superAdminPassword, setSuperAdminPassword] = useState<string | null>(() => {
+    const sa = MOCK_USERS.find((u) => u.role === "super_admin")
+    return sa?.password ?? null
+  })
 
   const login = useCallback((email: string, password: string) => {
     const found = MOCK_USERS.find(
@@ -97,24 +94,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true }
   }, [])
 
-  const register = useCallback((data: RegisterData) => {
+  const registerSuperAdmin = useCallback((data: { email: string; password: string; firstName: string; lastName: string }) => {
+    // Only allow if no super admin exists yet
+    const superAdminExists = MOCK_USERS.some((u) => u.role === "super_admin")
+    if (superAdminExists) {
+      return { success: false, error: "Un super administrateur existe deja" }
+    }
+
     const exists = MOCK_USERS.find(
       (u) => u.email.toLowerCase() === data.email.toLowerCase()
     )
     if (exists) {
       return { success: false, error: "Un compte avec cet email existe deja" }
     }
+
     const newUser: User = {
-      id: `alumni-${Date.now()}`,
+      id: `superadmin-${Date.now()}`,
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
-      role: "alumni",
-      promoYear: data.promoYear,
-      diploma: data.diploma,
+      role: "super_admin",
     }
     MOCK_USERS.push({ ...newUser, password: data.password })
     setUser(newUser)
+    setHasSuperAdmin(true)
+    setSuperAdminEmail(data.email)
+    setSuperAdminPassword(data.password)
     return { success: true }
   }, [])
 
@@ -127,8 +132,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        hasSuperAdmin,
+        superAdminEmail,
+        superAdminPassword,
         login,
-        register,
+        registerSuperAdmin,
         logout,
       }}
     >
