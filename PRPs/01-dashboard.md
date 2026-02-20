@@ -27,22 +27,26 @@ A master data table with filtering, individual profile management, data import/e
 - As an **Intervenant**, I want to manually update an alumnus's email when they notify us of a change.
 - As an **Admin**, I want to export a list of alumni for a specific promotion to send them a targeted email.
 - As a **Super Admin**, I want to see the history of changes made to a profile to track data accuracy.
+- As a **Staff**, I want to view the dashboard statistics but without being able to access destructive operations (import, delete).
+- As an **Admin**, I want to filter the alumni list by promotion year to quickly find a specific cohort.
 
 ## Technical Context
 
 ### Files to Reference (read-only)
 
-- `app/layout.tsx` - Main layout for dashboard navigation.
-- `lib/utils.ts` - For formatting dates and strings.
+- `app/layout.tsx` — Global layout with `AuthProvider`.
+- `app/page.tsx` — SPA entry point with tab routing logic.
+- `lib/utils.ts` — Date and string formatting.
+- `PRPs/00-authentication.md` — Roles and access control.
 
 ### Files to Implement/Modify
 
-- `app/(dashboard)/admin/page.tsx` - Main dashboard list view.
-- `app/(dashboard)/admin/alumni/[id]/page.tsx` - Individual profile editor.
-- `app/(dashboard)/admin/logs/page.tsx` - Activity logging view.
-- `components/admin/AlumniTable.tsx` - Data table component (using shadcn/ui).
-- `components/admin/ImportExportButtons.tsx` - CSV tools.
-- `lib/api/admin.ts` - API client for admin operations.
+- `components/dashboard-overview.tsx` — Main dashboard view (stats + summary).
+- `components/dashboard-stats.tsx` — KPI display component (total alumni, to refresh, etc.).
+- `components/alumni-directory.tsx` — Data table with search, sort, and filtering.
+- `components/alumni-profile.tsx` — Detailed profile view + editing form.
+- `components/logs-module.tsx` — Activity logs view.
+- `lib/api/admin.ts` — API client for administration operations.
 
 ### Existing Patterns to Follow
 
@@ -66,6 +70,8 @@ A master data table with filtering, individual profile management, data import/e
 - **AlumniTable**: Searchable table with columns: Identity, Contact, Degree, IA Status.
 - **AlumniEditSheet**: A sliding panel or modal to edit profile details manually.
 - **StatusBadge**: Color-coded badge for "Up to date" (green) vs "To refresh" (amber).
+- **DashboardStats**: Cards displaying KPIs (total alumni, profiles à jour, profiles to refresh, active jobs count).
+- **PromoFilter**: Dropdown or multi-select to filter by graduation year.
 
 ## Validation Criteria
 
@@ -77,6 +83,8 @@ A master data table with filtering, individual profile management, data import/e
 - [ ] Manual edits are persisted and visible immediately.
 - [ ] CSV Export generates a file containing the current filtered view.
 - [ ] Logs correctly record which user made a change and the timestamp.
+- [ ] Filtering by promotion year returns only the corresponding cohort.
+- [ ] Dashboard stats display correct counts (total, up to date, to refresh).
 
 ### Technical Requirements
 

@@ -24,24 +24,29 @@ A social hub listing upcoming events, managing RSVPs, and hosting memories of pa
 - As an **Alumni**, I want to see upcoming afterworks in my city so I can meet old friends.
 - As a **BDE Member**, I want to know how many alumni are coming to the Gala to order the right amount of catering.
 - As an **Alumni**, I want to browse photos of the 2023 Graduation Ceremony to reminisce about my time at school.
-- As an **Admin**, I want to create a new "Career Talk" event and notify the relevant promotions.
+- As an **Admin**, I want to create a new "Career Talk" event with title, date, location, description, and cover image.
+- As an **Admin**, I want to modify or cancel an existing event.
+- As an **Alumni**, I want to filter events by type (Gala, Afterwork, Conference, Alumni Dinner).
+- As an **Alumni**, I want to receive a reminder notification 24h before an event I'm attending (see `PRPs/06-notifications.md`).
 
 ## Technical Context
 
 ### Files to Reference (read-only)
 
-- `app/layout.tsx` - For global navigation.
-- `public/images/events/` - Folder for event assets/photos.
+- `app/page.tsx` — SPA entry point, "events" tab.
+- `PRPs/00-authentication.md` — Roles and access control.
+- `PRPs/06-notifications.md` — Event reminders.
+- `public/images/events/` — Folder for event assets/photos.
 
 ### Files to Implement/Modify
 
-- `app/(app)/events/page.tsx` - Central event feed.
-- `app/(app)/events/[id]/page.tsx` - Detailed view + RSVP button.
-- `app/(app)/events/archive/page.tsx` - Past events and photo galleries.
-- `components/events/EventCard.tsx` - Summary card for the feed.
-- `components/events/RsvpButton.tsx` - Interactive attendance toggle.
-- `components/events/PhotoGallery.tsx` - Grid/Carousel for archived event photos.
-- `lib/api/events.ts` - Logic for fetching events and updating RSVP status.
+- `components/events-module.tsx` — Existing main component (feed + details).
+- `components/events/EventCard.tsx` — Summary card for the feed.
+- `components/events/EventForm.tsx` — Event creation/editing form (admin/organizer).
+- `components/events/RsvpButton.tsx` — Interactive attendance toggle.
+- `components/events/EventTypeFilter.tsx` — Filter by event type (Gala, Afterwork, etc.).
+- `components/events/PhotoGallery.tsx` — Grid/carousel for archived event photos.
+- `lib/api/events.ts` — API client for CRUD and RSVP operations.
 
 ### Existing Patterns to Follow
 
@@ -53,16 +58,22 @@ A social hub listing upcoming events, managing RSVPs, and hosting memories of pa
 
 ### API/Endpoints (Expected)
 
-- `GET /events` - Fetches all events (can be filtered by upcoming/past).
-- `GET /events/{id}` - Fetches specific event details and attendee list.
-- `POST /events/{id}/rsvp` - Toggles the current user's participation.
-- `GET /events/{id}/photos` - Fetches the gallery assets for a past event.
+- `GET /events` — Fetches all events (filterable by upcoming/past, type, city).
+- `POST /events` — Creates a new event (admin/organizer only).
+- `GET /events/{id}` — Fetches specific event details and attendee list.
+- `PATCH /events/{id}` — Updates an existing event (admin/organizer only).
+- `DELETE /events/{id}` — Cancels/deletes an event (admin only).
+- `POST /events/{id}/rsvp` — Toggles the current user's participation.
+- `GET /events/{id}/photos` — Fetches the gallery assets for a past event.
+- `POST /events/{id}/photos` — Uploads photos for a past event (admin/organizer).
 
 ### Components
 
 - **AttendeeAvatarGroup**: Shows small avatars of people who are attending.
-- **CountdownTimer**: (Optional) For big events like the Gala.
-- **EventMap**: Integrated map (Google/Leaflet) for the physical location.
+- **CountdownTimer**: (Optional, V2) For big events like the Gala.
+- **EventMap**: (V2) Integrated map (Google/Leaflet) for the physical location.
+- **EventForm**: Creation/editing form (title, date, location, type, description, cover image).
+- **EventTypeFilter**: Buttons or dropdown to filter by event type (Gala, Afterwork, Conference, Alumni Dinner).
 
 ## Validation Criteria
 
@@ -72,6 +83,9 @@ A social hub listing upcoming events, managing RSVPs, and hosting memories of pa
 - [ ] Clicking "I'm participating" updates the count and shows the user as an attendee.
 - [ ] Past events are automatically moved to the "Archives" section.
 - [ ] Photo gallery allows full-screen viewing of event photos.
+- [ ] Admin/Organizer can create a new event via the form.
+- [ ] Admin/Organizer can edit or cancel an existing event.
+- [ ] Filtering by event type works correctly.
 
 ### Technical Requirements
 
