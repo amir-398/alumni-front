@@ -25,21 +25,25 @@ A job listing platform with simplified posting, AI-powered targeting, and restri
 - As a **Job Seeker**, I want to see offers specifically shared by alumni because they might act as referrals.
 - As an **Admin**, I want the system to tell me: "This 'Junior Developer' role is perfect for last year's graduates" so I can send a notification.
 - As a **Visitor**, I want to see that a job board exists, but I must log in to see the details.
+- As an **Alumni**, I want to edit a job posting I published to correct a mistake.
+- As an **Alumni**, I want to delete a job posting I published when the position is filled.
+- As an **Alumni**, I want to receive a notification when a new job matches my profile (see `PRPs/06-notifications.md`).
 
 ## Technical Context
 
 ### Files to Reference (read-only)
 
-- `app/(app)/layout.tsx` - Main navigation.
-- `lib/api/openai.ts` - (Hypothetical) If using OpenAI or local LLM for tagging.
+- `app/page.tsx` — SPA entry point, "jobs" tab.
+- `PRPs/00-authentication.md` — Access control.
+- `PRPs/06-notifications.md` — Targeted job notifications.
 
 ### Files to Implement/Modify
 
-- `app/(app)/jobs/page.tsx` - Main job list.
-- `app/(app)/jobs/new/page.tsx` - Job creation form.
-- `components/jobs/JobCard.tsx` - Visual representation of an offer.
-- `components/jobs/JobForm.tsx` - Form with validation.
-- `lib/api/jobs.ts` - CRUD operations for job postings.
+- `components/job-board.tsx` — Existing main component (list + form).
+- `components/jobs/JobCard.tsx` — Summary card for an offer.
+- `components/jobs/JobForm.tsx` — Creation/editing form with validation.
+- `components/jobs/JobDetailSheet.tsx` — Panel or modal with full offer details.
+- `lib/api/jobs.ts` — API client for CRUD operations on job offers.
 
 ### Existing Patterns to Follow
 
@@ -51,16 +55,20 @@ A job listing platform with simplified posting, AI-powered targeting, and restri
 
 ### API/Endpoints (Expected)
 
-- `GET /jobs` - Returns list of active jobs.
-- `POST /jobs` - Creates a new job.
-- `POST /jobs/analyze` - Sends description to AI to get suggested tags/promotions.
-- `GET /jobs/{id}` - Returns full job details.
+- `GET /jobs` — Returns list of active jobs (with pagination and filters).
+- `POST /jobs` — Creates a new job.
+- `GET /jobs/{id}` — Returns full job details.
+- `PATCH /jobs/{id}` — Updates an existing job (author or admin only).
+- `DELETE /jobs/{id}` — Deletes a job (author or admin only).
+- `POST /jobs/analyze` — Sends description to AI to get suggested tags/promotions.
 
 ### Components
 
 - **JobFilterBar**: Selectors for Contract Type and Graduation Year matching.
 - **AITagBadge**: Special badge showing the AI-suggested target audience.
+- **JobDetailSheet**: Sliding panel with full description, company info, external link, and edit/delete actions.
 - **JobStats**: (Admin only) Shows how many people viewed an offer.
+- **JobAuthorBadge**: Shows the alumni who posted the offer (with link to profile).
 
 ## Validation Criteria
 

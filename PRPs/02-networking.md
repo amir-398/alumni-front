@@ -14,9 +14,9 @@ A "Curtain" privacy model where directory data is tiered based on authentication
 
 ### Scope
 
-- **Secure Authentication:** "Magic Link" via email or LinkedIn OAuth for easy yet verified access.
+- **Secure Authentication:** Email/password (V1), then "Magic Link" and LinkedIn OAuth (V2). See `PRPs/00-authentication.md` for details.
 - **The "Curtain" Display:** Authenticated alumni see professional summaries (Name, Job, Promo) but cannot see raw emails or phone numbers.
-- **Mediated Contact System:** A "Contact" button that opens an internal messaging form. The recipient receives an email notification with the message and the sender's info.
+- **Mediated Contact System:** A "Contact" button that opens an internal messaging form. The recipient receives an email notification with the message and the sender's info. See also `PRPs/06-notifications.md` for internal messaging extension.
 - **LinkedIn Integration:** Direct links to LinkedIn profiles to shift detailed networking to a controlled third-party platform.
 
 ### User Stories
@@ -30,22 +30,23 @@ A "Curtain" privacy model where directory data is tiered based on authentication
 
 ### Files to Reference (read-only)
 
-- `PRPs/00-authentication.md` - For authentication base logic.
-- `app/api/auth/[...nextauth]/route.ts` - If using NextAuth.js for OAuth/Magic Links.
+- `PRPs/00-authentication.md` — Authentication system and roles.
+- `PRPs/06-notifications.md` — Internal messaging extension.
+- `lib/auth-context.tsx` — Authentication context (roles, logged-in state).
 
 ### Files to Implement/Modify
 
-- `app/(app)/directory/page.tsx` - Public/Alumni directory list.
-- `app/(app)/directory/[id]/page.tsx` - Profile view with the contact form.
-- `components/networking/ContactForm.tsx` - Internal messaging component.
-- `components/networking/PrivacyCurtain.tsx` - Component to mask/unmask data based on auth state.
-- `lib/api/messages.ts` - Logic for sending mediated contact emails.
+- `components/alumni-directory.tsx` — Existing table (admin/staff). Add an alumni mode with the privacy curtain.
+- `components/alumni-profile.tsx` — Profile view. Add masking of sensitive data for alumni.
+- `components/networking/ContactForm.tsx` — Mediated contact form.
+- `components/networking/PrivacyCurtain.tsx` — Component that masks/unmasks data based on role.
+- `lib/api/messages.ts` — Mediated message sending logic.
 
 ### Existing Patterns to Follow
 
-- Use **NextAuth.js** (or similar) for Magic Links and LinkedIn OAuth provider.
+- Use the authentication system described in `PRPs/00-authentication.md` (Email/password V1, NextAuth V2).
 - Use **NodeMailer** or an email service (Resend, SendGrid) for contact notifications.
-- Mask sensitive strings on the frontend while ensuring they aren't even sent in the API response for non-admins.
+- Mask sensitive data on the frontend **AND** ensure it is not included in the API response for non-admins. Filtering must happen server-side.
 
 ## Implementation Details
 
@@ -75,8 +76,9 @@ A "Curtain" privacy model where directory data is tiered based on authentication
 ### Technical Requirements
 
 - [ ] Sensitive data (Email/Phone) is **never** included in the `/directory` API response for standard alumni users.
-- [ ] Rate limiting on the "Contact" form to prevent internal spam (e.g., max 5 contacts/day).
-- [ ] GDPR compliance: clear opt-out for internal messaging in profile settings.
+- [ ] Server-side rate limiting (middleware) on contact form: max 5 messages/day per user. Return HTTP 429 if exceeded.
+- [ ] Client-side rate limiting: disable "Send" button and show a waiting message if limit is reached.
+- [ ] GDPR compliance: clear opt-out for internal messaging in profile settings (see `PRPs/05-profil-alumni.md`).
 
 ### Testing Steps
 
