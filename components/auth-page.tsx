@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Eye, EyeOff, LogIn, Shield, GraduationCap, Users } from "lucide-react"
+import { Eye, EyeOff, LogIn, Shield, GraduationCap, Users, Crown } from "lucide-react"
 import Image from "next/image"
 
 export function AuthPage() {
@@ -131,6 +131,16 @@ export function AuthPage() {
                 Comptes de demo
               </p>
               <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                  disabled={loading}
+                  onClick={() => handleDemoLogin("superadmin@ecole-multimedia.com", "super123")}
+                >
+                  <Crown className="w-4 h-4 text-chart-3" />
+                  <span className="flex-1 text-left">Super Admin</span>
+                  <span className="text-xs text-muted-foreground">superadmin@ecole-multimedia.com</span>
+                </Button>
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-3"

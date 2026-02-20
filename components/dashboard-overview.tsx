@@ -3,7 +3,7 @@
 import { DashboardStats } from "@/components/dashboard-stats"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { mockAlumni, mockJobs, mockEvents, mockLogs } from "@/lib/mock-data"
+import { mockAlumni, mockJobs, mockEvents, mockLogs, mockUpdateRequests } from "@/lib/mock-data"
 import {
   Users,
   Briefcase,
@@ -11,6 +11,8 @@ import {
   Clock,
   ArrowRight,
   TrendingUp,
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react"
 
 export function DashboardOverview() {
@@ -124,6 +126,50 @@ export function DashboardOverview() {
                   </span>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Update Requests from Alumni */}
+        <Card className="border border-border">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-chart-3" />
+              Demandes de mise a jour
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {mockUpdateRequests.filter((r) => !r.resolved).length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-3">
+              {mockUpdateRequests
+                .filter((r) => !r.resolved)
+                .map((req) => (
+                  <div key={req.id} className="flex items-start gap-3 p-3 rounded-lg bg-chart-3/5 border border-chart-3/20">
+                    <AlertTriangle className="w-4 h-4 text-chart-3 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{req.alumniName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{req.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(req.requestedAt).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              {mockUpdateRequests.filter((r) => r.resolved).length > 0 && (
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
+                  <CheckCircle className="w-3.5 h-3.5 text-accent" />
+                  <span className="text-xs text-muted-foreground">
+                    {mockUpdateRequests.filter((r) => r.resolved).length} demande(s) traitee(s)
+                  </span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

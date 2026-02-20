@@ -49,7 +49,7 @@ const typeConfig: Record<Event["type"], { label: string; icon: React.ElementType
 
 export function EventsModule() {
   const { user } = useAuth()
-  const isAdmin = user?.role === "admin"
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin"
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all")
   const [rsvpEvents, setRsvpEvents] = useState<Set<string>>(new Set())
   const [addDialogOpen, setAddDialogOpen] = useState(false)

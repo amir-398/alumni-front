@@ -49,7 +49,7 @@ type SortDir = "asc" | "desc"
 
 export function AlumniDirectory() {
   const { user } = useAuth()
-  const isAdmin = user?.role === "admin"
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin"
   const [search, setSearch] = useState("")
   const [filterDiploma, setFilterDiploma] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")

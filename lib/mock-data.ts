@@ -59,6 +59,15 @@ export interface Event {
   imageUrl: string | null
 }
 
+export interface UpdateRequest {
+  id: string
+  alumniId: string
+  alumniName: string
+  message: string
+  requestedAt: string
+  resolved: boolean
+}
+
 // ===== MOCK DATA =====
 
 export const mockAlumni: Alumni[] = [
@@ -446,6 +455,33 @@ export const mockEvents: Event[] = [
   },
 ]
 
+export const mockUpdateRequests: UpdateRequest[] = [
+  {
+    id: "ur1",
+    alumniId: "6",
+    alumniName: "Hugo Moreau",
+    message: "J'ai change d'entreprise, je suis maintenant chez Amundi et non plus chez Natixis.",
+    requestedAt: "2026-02-17T09:30:00",
+    resolved: false,
+  },
+  {
+    id: "ur2",
+    alumniId: "9",
+    alumniName: "Julie Roux",
+    message: "Mon poste actuel est Senior ML Engineer, et j'ai demenage a Lyon.",
+    requestedAt: "2026-02-15T14:20:00",
+    resolved: false,
+  },
+  {
+    id: "ur3",
+    alumniId: "12",
+    alumniName: "Paul Andre",
+    message: "Je ne suis plus chez BNP Paribas, j'ai rejoint Societe Generale.",
+    requestedAt: "2026-02-10T11:00:00",
+    resolved: true,
+  },
+]
+
 // ===== STATS =====
 export const dashboardStats = {
   totalAlumni: 1247,
@@ -453,5 +489,5 @@ export const dashboardStats = {
   profilesToRefresh: 355,
   activeJobPostings: 23,
   upcomingEvents: 4,
-  contactRequestsThisMonth: 67,
+  pendingUpdateRequests: 2,
 }

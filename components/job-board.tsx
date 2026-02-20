@@ -43,7 +43,7 @@ const typeColors: Record<JobType, string> = {
 
 export function JobBoard() {
   const { user } = useAuth()
-  const isAdmin = user?.role === "admin"
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin"
   const [filterType, setFilterType] = useState("all")
   const [search, setSearch] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
