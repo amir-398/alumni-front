@@ -8,9 +8,9 @@ import {
   LayoutDashboard,
   Briefcase,
   CalendarDays,
-  ClipboardList,
   LogOut,
   UserCircle,
+  UserPlus,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -27,12 +27,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["admin", "staff"] },
-  { id: "directory", label: "Annuaire", icon: Users, roles: ["admin", "staff"] },
-  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["admin", "alumni", "staff"] },
-  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["admin", "alumni", "staff"] },
-  { id: "logs", label: "Historique", icon: ClipboardList, roles: ["admin", "staff"] },
-  { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni"] },
+  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["super_admin", "admin", "staff"] },
+  { id: "directory", label: "Annuaire", icon: Users, roles: ["super_admin", "admin", "staff"] },
+  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["super_admin", "admin", "alumni", "staff"] },
+  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["super_admin", "admin", "alumni", "staff"] },
+  { id: "staff-management", label: "Gestion Staff", icon: UserPlus, roles: ["super_admin"] },
+  { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni", "staff"] },
 ]
 
 export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
@@ -60,11 +60,11 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       <div className="px-5 pt-4 pb-2">
         <span className={cn(
           "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-          user?.role === "admin"
+          user?.role === "super_admin" || user?.role === "admin"
             ? "bg-sidebar-primary/20 text-sidebar-primary"
             : "bg-sidebar-accent text-sidebar-accent-foreground"
         )}>
-          {user?.role === "admin" ? "Administration" : user?.role === "staff" ? "Staff" : "Espace Alumni"}
+          {user?.role === "super_admin" ? "Super Admin" : user?.role === "admin" ? "Administration" : user?.role === "staff" ? "Staff" : "Espace Alumni"}
         </span>
       </div>
 

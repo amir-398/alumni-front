@@ -39,7 +39,7 @@ interface AlumniProfileProps {
 
 export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
   const { user } = useAuth()
-  const isAdmin = user?.role === "admin"
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin"
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({ ...alumni })
   const [contactOpen, setContactOpen] = useState(false)
