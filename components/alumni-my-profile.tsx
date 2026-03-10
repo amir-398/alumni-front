@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { mockAlumni } from "@/lib/mock-data"
+import { alumniApi } from "@/lib/api/alumni"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -33,30 +33,47 @@ export function AlumniMyProfile() {
   const [message, setMessage] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
-  const alumniData = mockAlumni.find(
-    (a) => a.email.toLowerCase() === user?.email?.toLowerCase()
-  ) || {
-    id: user?.id || "",
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
-    linkedinUrl: "",
-    diploma: user?.diploma || "Non renseigne",
-    promoYear: user?.promoYear || 0,
-    status: "to_refresh" as const,
-    lastScrapDate: "",
-    currentJob: "Non renseigne",
-    currentCompany: "Non renseigne",
-    city: "Non renseigne",
-    avatarUrl: null,
-  }
+  const [alumniData, setAlumniData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    alumniApi.getMyProfile().then((item: any) => {
+      // Map API response
+      setAlumniData({
+        id: item.id || user?.id || "",
+        firstName: item.first_name || user?.firstName || "",
+        lastName: item.last_name || user?.lastName || "",
+        email: item.email || user?.email || "",
+        linkedinUrl: item.linkedin_url || "",
+        diploma: item.diploma || user?.diploma || "Non renseigne",
+        promoYear: item.graduation_year || user?.promoYear || 0,
+        status: item.status || "to_refresh",
+        lastScrapDate: "",
+        currentJob: item.current_title || "Non renseigne",
+        currentCompany: item.current_company || "Non renseigne",
+        city: item.city || "Non renseigne",
+        avatarUrl: null,
+      })
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [user])
 
   const handleSubmitSignal = () => {
     setSubmitted(true)
     setMessage("")
+    // We could call alumniApi.createCorrection here as well
+    alumniApi.createCorrection({ field: "general", proposed_value: message })
     setTimeout(() => {
       setDialogOpen(false)
     }, 1500)
+  }
+
+  if (loading) {
+    return <div className="p-8 text-center text-muted-foreground">Chargement de votre profil...</div>
+  }
+
+  if (!alumniData && !loading) {
+    return <div className="p-8 text-center text-muted-foreground">Impossible de charger votre profil. Veuillez verifier votre connexion.</div>
   }
 
   return (

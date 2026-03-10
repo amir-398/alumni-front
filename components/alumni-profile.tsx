@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import type { Alumni } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
@@ -35,19 +35,64 @@ import {
 interface AlumniProfileProps {
   alumni: Alumni
   onBack: () => void
+  onUpdate?: () => void
 }
 
-export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
+export function AlumniProfile({ alumni, onBack, onUpdate }: AlumniProfileProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === "admin" || user?.role === "super_admin"
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({ ...alumni })
+  // localData reflects the saved state to avoid showing stale prop data after save
+  const [localData, setLocalData] = useState({ ...alumni })
   const [contactOpen, setContactOpen] = useState(false)
   const [contactMessage, setContactMessage] = useState("")
   const [contactSent, setContactSent] = useState(false)
 
-  const handleSave = () => {
-    setIsEditing(false)
+  // Sync with prop if it changes
+  useEffect(() => {
+    setLocalData({ ...alumni })
+    setEditData({ ...alumni })
+  }, [alumni])
+
+  const handleSave = async () => {
+    try {
+      const { adminApi } = await import("@/lib/api/admin")
+      
+      // Filter payload to avoid sending empty strings for optional/strict fields (like email)
+      const payload: any = {}
+      if (editData.firstName?.trim()) payload.first_name = editData.firstName
+      if (editData.lastName?.trim()) payload.last_name = editData.lastName
+      if (editData.email?.trim()) payload.email = editData.email
+      if (editData.linkedinUrl?.trim()) payload.linkedin_url = editData.linkedinUrl
+      if (editData.currentJob?.trim()) payload.current_title = editData.currentJob
+      if (editData.currentCompany?.trim()) payload.current_company = editData.currentCompany
+      if (editData.city?.trim()) payload.city = editData.city
+      if (editData.promoYear) {
+        const year = Number(editData.promoYear)
+        if (!isNaN(year) && year > 1900) payload.graduation_year = year
+      }
+      if (editData.diploma?.trim()) payload.diploma = editData.diploma
+
+      await adminApi.updateAlumni(alumni.id, payload)
+      // Update local view immediately
+      setLocalData({ ...editData })
+      setIsEditing(false)
+      if (onUpdate) onUpdate()
+    } catch (err) {
+      console.error("Failed to update alumni", err)
+    }
+  }
+
+  const handleTriggerEnrichment = async () => {
+    try {
+      const { adminApi } = await import("@/lib/api/admin")
+      await adminApi.triggerEnrichment(alumni.id)
+      alert("Enrichissement lance avec succes !")
+      window.location.reload()
+    } catch (err) {
+      console.error("Failed to trigger enrichment", err)
+    }
   }
 
   const handleSendContact = () => {
@@ -73,14 +118,14 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
         <Card className="lg:col-span-1 border border-border">
           <CardContent className="pt-6 flex flex-col items-center gap-4">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
-              {alumni.firstName[0]}{alumni.lastName[0]}
+              {localData.firstName?.[0] || ""}{localData.lastName?.[0] || ""}
             </div>
             <div className="text-center">
               <h2 className="text-xl font-bold text-foreground">
-                {alumni.firstName} {alumni.lastName}
+                {localData.firstName} {localData.lastName}
               </h2>
-              <p className="text-sm text-muted-foreground">{alumni.currentJob}</p>
-              <p className="text-sm font-medium text-foreground">{alumni.currentCompany}</p>
+              <p className="text-sm text-muted-foreground">{localData.currentJob}</p>
+              <p className="text-sm font-medium text-foreground">{localData.currentCompany}</p>
             </div>
 
             <Badge
@@ -97,19 +142,19 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
             <div className="w-full flex flex-col gap-3 pt-4 border-t border-border">
               <div className="flex items-center gap-3 text-sm">
                 <GraduationCap className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-foreground">{alumni.diploma}</span>
+                <span className="text-foreground">{localData.diploma}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-foreground">Promo {alumni.promoYear}</span>
+                <span className="text-foreground">Promo {localData.promoYear}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-foreground">{alumni.city}</span>
+                <span className="text-foreground">{localData.city}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-foreground">{alumni.currentJob}</span>
+                <span className="text-foreground">{localData.currentJob}</span>
               </div>
             </div>
 
@@ -216,7 +261,7 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumni.firstName}</p>
+                  <p className="mt-1 text-foreground font-medium">{localData.firstName}</p>
                 )}
               </div>
               <div>
@@ -228,7 +273,7 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumni.lastName}</p>
+                  <p className="mt-1 text-foreground font-medium">{localData.lastName}</p>
                 )}
               </div>
               <div>
@@ -240,9 +285,9 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
                     className="mt-1"
                   />
                 ) : (
-                  <a href={`mailto:${alumni.email}`} className="mt-1 block text-primary hover:underline">
+                  <a href={`mailto:${localData.email}`} className="mt-1 block text-primary hover:underline">
                     <Mail className="w-3 h-3 inline mr-1" />
-                    {alumni.email}
+                    {localData.email}
                   </a>
                 )}
               </div>
@@ -255,9 +300,9 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
                     className="mt-1"
                   />
                 ) : (
-                  <a href={alumni.linkedinUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block text-primary hover:underline truncate">
+                  <a href={localData.linkedinUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block text-primary hover:underline truncate">
                     <ExternalLink className="w-3 h-3 inline mr-1" />
-                    {alumni.linkedinUrl}
+                    {localData.linkedinUrl}
                   </a>
                 )}
               </div>
@@ -270,7 +315,7 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumni.currentJob}</p>
+                  <p className="mt-1 text-foreground font-medium">{localData.currentJob}</p>
                 )}
               </div>
               <div>
@@ -282,7 +327,7 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumni.currentCompany}</p>
+                  <p className="mt-1 text-foreground font-medium">{localData.currentCompany}</p>
                 )}
               </div>
               <div>
@@ -294,20 +339,78 @@ export function AlumniProfile({ alumni, onBack }: AlumniProfileProps) {
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-foreground font-medium">{alumni.city}</p>
+                  <p className="mt-1 text-foreground font-medium">{localData.city}</p>
+                )}
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Diplome</Label>
+                {isEditing ? (
+                  <Input
+                    value={editData.diploma}
+                    onChange={(e) => setEditData({ ...editData, diploma: e.target.value })}
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="mt-1 text-foreground font-medium">{localData.diploma}</p>
+                )}
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Promotion</Label>
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    value={editData.promoYear}
+                    onChange={(e) => setEditData({ ...editData, promoYear: Number(e.target.value) })}
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="mt-1 text-foreground font-medium">{localData.promoYear}</p>
                 )}
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Dernier scan IA</Label>
-                <p className="mt-1 text-foreground font-medium">
-                  {new Date(alumni.lastScrapDate).toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <p className="text-foreground font-medium">
+                    {new Date(alumni.lastScrapDate).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                  {isAdmin && (
+                    <Button variant="outline" size="sm" onClick={handleTriggerEnrichment} className="h-7 text-xs">
+                      Relancer le scan
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
+
+            {isAdmin && (
+               <div className="pt-8 mt-8 border-t border-border">
+                  <h3 className="text-sm font-semibold text-destructive mb-2">Zone de danger</h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    La desactivation de l&quot;alumni l&quot;empechera de se connecter et le masquera de l&quot;annuaire public.
+                  </p>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={async () => {
+                      if (confirm(`Etes-vous sur de vouloir desactiver ${alumni.firstName}?`)) {
+                        try {
+                          const { adminApi } = await import("@/lib/api/admin")
+                          await adminApi.deactivateAlumni(alumni.id)
+                          onBack()
+                        } catch (err) {
+                          console.error("Failed to deactivate", err)
+                        }
+                      }
+                    }}
+                  >
+                    Desactiver le compte
+                  </Button>
+               </div>
+            )}
           </CardContent>
         </Card>
       </div>

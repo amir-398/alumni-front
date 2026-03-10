@@ -15,6 +15,7 @@ import { StaffManagement } from "@/components/staff-management"
 
 export default function Page() {
   const { isAuthenticated, user } = useAuth()
+  console.log("Main Page Rendering:", { isAuthenticated, userRole: user?.role })
   const [activeTab, setActiveTab] = useState("")
 
   useEffect(() => {
