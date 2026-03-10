@@ -90,6 +90,9 @@ export function AlumniDirectory() {
         currentJob: item.current_title || "",
         currentCompany: item.current_company || "",
         city: item.city || "",
+        lastScrapDate: item.last_scraped_at,
+        scrapeStatus: item.scrape_status,
+        is_active: item.is_active ?? true,
       }))
       setData(mapped)
       return mapped
@@ -211,9 +214,9 @@ export function AlumniDirectory() {
 
   if (selectedAlumni) {
     return (
-      <AlumniProfile 
-        alumni={selectedAlumni} 
-        onBack={() => setSelectedAlumni(null)} 
+      <AlumniProfile
+        alumni={selectedAlumni}
+        onBack={() => setSelectedAlumni(null)}
         onUpdate={async () => {
           // Refresh background list and update selected alumni reference
           const newData = await refreshAlumni()
@@ -221,7 +224,7 @@ export function AlumniDirectory() {
             const updated = newData.find((a: any) => a.id === selectedAlumni.id)
             if (updated) setSelectedAlumni(updated)
           }
-        }} 
+        }}
       />
     )
   }
@@ -245,24 +248,24 @@ export function AlumniDirectory() {
               <DialogHeader>
                 <DialogTitle>Ajouter un alumni</DialogTitle>
               </DialogHeader>
-               <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="add-firstname">Prenom</Label>
-                    <Input 
-                      id="add-firstname" 
-                      placeholder="Prenom" 
-                      className="mt-1" 
+                    <Input
+                      id="add-firstname"
+                      placeholder="Prenom"
+                      className="mt-1"
                       value={newAlumni.firstName}
                       onChange={(e) => setNewAlumni({ ...newAlumni, firstName: e.target.value })}
                     />
                   </div>
                   <div>
                     <Label htmlFor="add-lastname">Nom</Label>
-                    <Input 
-                      id="add-lastname" 
-                      placeholder="Nom" 
-                      className="mt-1" 
+                    <Input
+                      id="add-lastname"
+                      placeholder="Nom"
+                      className="mt-1"
                       value={newAlumni.lastName}
                       onChange={(e) => setNewAlumni({ ...newAlumni, lastName: e.target.value })}
                     />
@@ -270,11 +273,11 @@ export function AlumniDirectory() {
                 </div>
                 <div>
                   <Label htmlFor="add-email">Email</Label>
-                  <Input 
-                    id="add-email" 
-                    type="email" 
-                    placeholder="email@example.com" 
-                    className="mt-1" 
+                  <Input
+                    id="add-email"
+                    type="email"
+                    placeholder="email@example.com"
+                    className="mt-1"
                     value={newAlumni.email}
                     onChange={(e) => setNewAlumni({ ...newAlumni, email: e.target.value })}
                   />
@@ -295,11 +298,11 @@ export function AlumniDirectory() {
                   </div>
                   <div>
                     <Label htmlFor="add-promo">Promotion</Label>
-                    <Input 
-                      id="add-promo" 
-                      type="number" 
-                      placeholder="Annee" 
-                      className="mt-1" 
+                    <Input
+                      id="add-promo"
+                      type="number"
+                      placeholder="Annee"
+                      className="mt-1"
                       value={newAlumni.promoYear}
                       onChange={(e) => setNewAlumni({ ...newAlumni, promoYear: Number(e.target.value) })}
                     />
@@ -307,10 +310,10 @@ export function AlumniDirectory() {
                 </div>
                 <div>
                   <Label htmlFor="add-linkedin">LinkedIn</Label>
-                  <Input 
-                    id="add-linkedin" 
-                    placeholder="https://linkedin.com/in/..." 
-                    className="mt-1" 
+                  <Input
+                    id="add-linkedin"
+                    placeholder="https://linkedin.com/in/..."
+                    className="mt-1"
                     value={newAlumni.linkedinUrl}
                     onChange={(e) => setNewAlumni({ ...newAlumni, linkedinUrl: e.target.value })}
                   />
@@ -318,20 +321,20 @@ export function AlumniDirectory() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="add-job">Poste</Label>
-                    <Input 
-                      id="add-job" 
-                      placeholder="Poste actuel" 
-                      className="mt-1" 
+                    <Input
+                      id="add-job"
+                      placeholder="Poste actuel"
+                      className="mt-1"
                       value={newAlumni.currentJob}
                       onChange={(e) => setNewAlumni({ ...newAlumni, currentJob: e.target.value })}
                     />
                   </div>
                   <div>
                     <Label htmlFor="add-company">Entreprise</Label>
-                    <Input 
-                      id="add-company" 
-                      placeholder="Entreprise" 
-                      className="mt-1" 
+                    <Input
+                      id="add-company"
+                      placeholder="Entreprise"
+                      className="mt-1"
                       value={newAlumni.currentCompany}
                       onChange={(e) => setNewAlumni({ ...newAlumni, currentCompany: e.target.value })}
                     />
@@ -339,10 +342,10 @@ export function AlumniDirectory() {
                 </div>
                 <div>
                   <Label htmlFor="add-city">Ville</Label>
-                  <Input 
-                    id="add-city" 
-                    placeholder="Ville" 
-                    className="mt-1" 
+                  <Input
+                    id="add-city"
+                    placeholder="Ville"
+                    className="mt-1"
                     value={newAlumni.city}
                     onChange={(e) => setNewAlumni({ ...newAlumni, city: e.target.value })}
                   />

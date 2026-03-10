@@ -293,31 +293,31 @@ export function AuthPage() {
                     variant="outline"
                     className="w-full justify-start gap-3"
                     disabled={loading}
-                    onClick={() => handleDemoLogin("admin@ecole-multimedia.com", "admin123")}
+                    onClick={() => handleDemoLogin("admin1@ecole-multimedia.com", "password123")}
                   >
                     <Shield className="w-4 h-4 text-primary" />
                     <span className="flex-1 text-left">Admin</span>
-                    <span className="text-xs text-muted-foreground">admin@ecole-multimedia.com</span>
+                    <span className="text-xs text-muted-foreground">admin1@ecole-multimedia.com</span>
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-3"
                     disabled={loading}
-                    onClick={() => handleDemoLogin("sophie.martin@email.com", "alumni123")}
+                    onClick={() => handleDemoLogin("alumni1@example.com", "password123")}
                   >
                     <GraduationCap className="w-4 h-4 text-accent" />
                     <span className="flex-1 text-left">Alumni</span>
-                    <span className="text-xs text-muted-foreground">sophie.martin@email.com</span>
+                    <span className="text-xs text-muted-foreground">alumni1@example.com</span>
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-3"
                     disabled={loading}
-                    onClick={() => handleDemoLogin("staff@ecole-multimedia.com", "staff123")}
+                    onClick={() => handleDemoLogin("staff1@ecole-multimedia.com", "password123")}
                   >
                     <Users className="w-4 h-4 text-muted-foreground" />
                     <span className="flex-1 text-left">Staff</span>
-                    <span className="text-xs text-muted-foreground">staff@ecole-multimedia.com</span>
+                    <span className="text-xs text-muted-foreground">staff1@ecole-multimedia.com</span>
                   </Button>
                 </div>
               </div>

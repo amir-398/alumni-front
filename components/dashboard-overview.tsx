@@ -16,7 +16,22 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle,
+  ShieldCheck,
+  Plus,
+  Mail,
+  UserCircle,
 } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 export function DashboardOverview() {
   const [data, setData] = useState<any>({
@@ -34,6 +49,12 @@ export function DashboardOverview() {
     }
   })
   const [loading, setLoading] = useState(true)
+  const [admins, setAdmins] = useState<any[]>([])
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
+  const [inviteData, setInviteData] = useState({ email: "", firstName: "", lastName: "" })
+  const [invited, setInvited] = useState(false)
+  const { user } = useAuth()
+  const isSuperAdmin = user?.role === "super_admin"
 
   useEffect(() => {
     async function loadDashboard() {
@@ -60,6 +81,11 @@ export function DashboardOverview() {
             upcomingEvents: eventsRes.total || (eventsRes.items || []).length,
           }
         })
+
+        if (isSuperAdmin) {
+          const allUsers = await adminApi.getAlumni({ limit: 100 }) as any
+          setAdmins(allUsers.items.filter((u: any) => u.role === "ADMIN"))
+        }
       } catch (err) {
         console.error("Dashboard loaded failed", err)
       } finally {
@@ -82,6 +108,29 @@ export function DashboardOverview() {
       window.location.reload()
     } catch (err) {
       console.error(`Failed to ${action} correction`, err)
+    }
+  }
+
+  const handleInviteAdmin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await adminApi.createAlumni({
+        ...inviteData,
+        role: "ADMIN"
+      })
+      setInvited(true)
+      // Refresh admin list
+      const allUsers = await adminApi.getAlumni({ limit: 100 }) as any
+      setAdmins(allUsers.items.filter((u: any) => u.role === "ADMIN"))
+      
+      setTimeout(() => {
+        setInviteDialogOpen(false)
+        setInvited(false)
+        setInviteData({ email: "", firstName: "", lastName: "" })
+      }, 1500)
+    } catch (err) {
+      console.error("Failed to invite admin", err)
+      alert("Erreur lors de l'invitation de l'administrateur.")
     }
   }
 
@@ -303,6 +352,98 @@ export function DashboardOverview() {
             </div>
           </CardContent>
         </Card>
+
+        {/* SUPER ADMIN ONLY: Admin Management Quick Access */}
+        {isSuperAdmin && (
+          <Card className="border border-border lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-sidebar-primary" />
+                Gestion des Administrateurs
+              </CardTitle>
+              <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="gap-2 bg-sidebar-primary hover:bg-sidebar-primary/90">
+                    <Plus className="w-4 h-4" />
+                    Ajouter un Admin
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Inviter un administrateur</DialogTitle>
+                  </DialogHeader>
+                  {!invited ? (
+                    <form onSubmit={handleInviteAdmin} className="flex flex-col gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="admin-email">Email</Label>
+                        <Input 
+                          id="admin-email" 
+                          type="email" 
+                          required 
+                          value={inviteData.email}
+                          onChange={(e) => setInviteData({...inviteData, email: e.target.value})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="admin-first">Prenom</Label>
+                          <Input 
+                            id="admin-first" 
+                            value={inviteData.firstName}
+                            onChange={(e) => setInviteData({...inviteData, firstName: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="admin-last">Nom</Label>
+                          <Input 
+                            id="admin-last" 
+                            value={inviteData.lastName}
+                            onChange={(e) => setInviteData({...inviteData, lastName: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" className="w-full">
+                          <Mail className="w-4 h-4 mr-2" />
+                          Envoyer l&apos;invitation
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 py-8 text-center">
+                      <CheckCircle className="w-12 h-12 text-accent" />
+                      <p className="font-medium">Invitation envoyee !</p>
+                      <p className="text-sm text-muted-foreground">L&apos;administrateur sera ajoute a la liste.</p>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {admins.map((admin: any) => (
+                  <div key={admin.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                    <div className="w-10 h-10 rounded-full bg-sidebar-primary/10 flex items-center justify-center text-xs font-semibold text-sidebar-primary">
+                      {admin.profile?.first_name?.[0] || <UserCircle className="w-5 h-5 text-muted-foreground" />}
+                      {admin.profile?.last_name?.[0] || ""}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {admin.profile?.first_name || ""} {admin.profile?.last_name || admin.email}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={admin.is_verified ? "secondary" : "outline"} className="text-[10px] h-4 px-1.5">
+                          {admin.is_verified ? "Vérifié" : "Invité"}
+                        </Badge>
+                        <p className="text-[10px] text-muted-foreground truncate">{admin.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

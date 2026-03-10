@@ -72,14 +72,15 @@ export function JobBoard() {
         id: job.id,
         type: job.type as JobType,
         title: job.title,
-        company: job.company_name || job.company || "",
+        company_name: job.company_name, // Match backend
         location: job.location,
         description: job.description,
-        link: job.external_link || job.link || "",
-        postedBy: job.author_info ? `${job.author_info.first_name} ${job.author_info.last_name}` : job.postedBy || "Inconnu",
-        postedAt: job.created_at || job.postedAt || new Date().toISOString(),
+        external_link: job.external_link, // Match backend
+        postedBy: job.author_info ? `${job.author_info.first_name} ${job.author_info.last_name}` : "Inconnu",
+        postedAt: job.created_at || new Date().toISOString(),
         suggestedPromos: job.suggestedPromos || [],
         status: job.status,
+        author_id: job.author_id,
       }))
       setData(mapped)
       setLoading(false)
@@ -102,9 +103,11 @@ export function JobBoard() {
         description: "",
         external_link: "",
       })
+      alert("L'offre a été publiée avec succès.")
       refreshJobs()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to create job", err)
+      alert(err.message || "Erreur lors de la création de l'offre.")
     }
   }
 
@@ -124,11 +127,11 @@ export function JobBoard() {
     try {
       await jobsApi.updateJob(editForm.id, {
         title: editForm.title,
-        company_name: editForm.company,
+        company_name: editForm.company_name,
         location: editForm.location,
         type: editForm.type,
         description: editForm.description,
-        external_link: editForm.link,
+        external_link: editForm.external_link,
       })
       setEditingJob(null)
       setEditForm(null)
@@ -154,7 +157,7 @@ export function JobBoard() {
       const q = search.toLowerCase()
       return (
         job.title.toLowerCase().includes(q) ||
-        job.company.toLowerCase().includes(q) ||
+        job.company_name.toLowerCase().includes(q) ||
         job.location.toLowerCase().includes(q)
       )
     }
@@ -181,14 +184,14 @@ export function JobBoard() {
           <p className="text-sm text-muted-foreground">{filtered.length} offres disponibles</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          {isAdmin && (
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Publier une offre
-              </Button>
-            </DialogTrigger>
-          )}
+        {isAdmin && (
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" />
+              Publier une offre
+            </Button>
+          </DialogTrigger>
+        )}
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Publier une offre</DialogTitle>
@@ -322,9 +325,9 @@ export function JobBoard() {
                 <Label htmlFor="edit-job-company">Entreprise</Label>
                 <Input
                   id="edit-job-company"
-                  value={editForm.company}
+                  value={editForm.company_name}
                   className="mt-1"
-                  onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                  onChange={(e) => setEditForm({ ...editForm, company_name: e.target.value })}
                 />
               </div>
               <div>
@@ -341,9 +344,9 @@ export function JobBoard() {
                 <Label htmlFor="edit-job-link">Lien de l&apos;offre</Label>
                 <Input
                   id="edit-job-link"
-                  value={editForm.link}
+                  value={editForm.external_link}
                   className="mt-1"
-                  onChange={(e) => setEditForm({ ...editForm, link: e.target.value })}
+                  onChange={(e) => setEditForm({ ...editForm, external_link: e.target.value })}
                 />
               </div>
             </div>
@@ -396,7 +399,7 @@ export function JobBoard() {
                     )}
                   </div>
                   <CardTitle className="text-base">{job.title}</CardTitle>
-                  <p className="text-sm font-medium text-muted-foreground mt-1">{job.company}</p>
+                  <p className="text-sm font-medium text-muted-foreground mt-1">{job.company_name}</p>
                 </div>
                 {isAdmin && (
                   <div className="flex gap-1 shrink-0">
@@ -473,7 +476,7 @@ export function JobBoard() {
                   </div>
                 )}
                 {!isAdmin && <div />}
-                <a href={job.link} target="_blank" rel="noopener noreferrer">
+                <a href={job.external_link} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <ExternalLink className="w-3 h-3" />
                     Voir l&apos;offre

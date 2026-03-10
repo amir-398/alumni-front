@@ -56,7 +56,7 @@ export function EventsModule() {
   const { user } = useAuth()
   const isAdmin = user?.role === "admin" || user?.role === "super_admin"
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all")
-  const [rsvpEvents, setRsvpEvents] = useState<Set<string>>(new Set())
+  const [rsvpEvents, setRsvpEvents] = useState<Set<number>>(new Set())
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<any | null>(null)
 
@@ -79,6 +79,7 @@ export function EventsModule() {
   const refreshEvents = () => {
     setLoading(true)
     eventsApi.getEvents({ limit: 100 }).then(res => {
+      console.log("[Events] Data received:", res.items)
       const mapped = (res.items || []).map((e: any) => {
         const type = (e.event_type || "other").toLowerCase()
         const isPast = new Date(e.event_date) < new Date()
@@ -92,13 +93,24 @@ export function EventsModule() {
           location: e.location || "En ligne",
           type: typeConfig[type] ? type : "other",
           status: isPast ? "past" : "upcoming",
-          attendees: (e.participants || []).length || Math.floor(Math.random() * 20), // Fallback for Seed data without participants
-          maxAttendees: e.max_seats || 50
+          attendees: e.participants_count || 0,
+          maxAttendees: e.max_seats || 50,
+          is_registered: e.is_registered
         }
       })
       setData(mapped)
+      // Populate rsvpEvents set from backend status using NUMBERS
+      const rsvped = new Set<number>()
+      mapped.forEach((ev: any) => {
+        if (ev.is_registered) rsvped.add(ev.id)
+      })
+      console.log("[Events] Registered IDs:", Array.from(rsvped))
+      setRsvpEvents(rsvped)
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch((err) => {
+      console.error("[Events] Refresh failed:", err)
+      setLoading(false)
+    })
   }
 
   useEffect(() => {
@@ -110,26 +122,46 @@ export function EventsModule() {
     return e.status === filter
   })
 
-   const handleRSVP = async (eventId: string) => {
+   const handleRSVP = async (eventId: number) => {
     try {
+      if (rsvpEvents.has(eventId)) {
+        alert("Vous êtes déjà inscrit à cet événement.")
+        return
+      }
+
+      console.log(`[Events] Registering for event: ${eventId}`)
       await eventsApi.registerToEvent(eventId)
+      
       setRsvpEvents((prev) => {
         const next = new Set(prev)
-        if (next.has(eventId)) {
-          next.delete(eventId)
-        } else {
-          next.add(eventId)
-        }
+        next.add(eventId)
         return next
       })
-    } catch (err) {
+      // Refresh to get updated count and confirm status from API
+      refreshEvents()
+    } catch (err: any) {
       console.error("Failed to RSVP", err)
+      alert(err.message || "Erreur lors de l'inscription.")
     }
   }
 
   const handleCreateEvent = async () => {
     try {
-      await adminApi.createEvent(newEvent)
+      // Format date for backend: combines date and time
+      const eventDate = new Date(`${newEvent.date}T${newEvent.time || "00:00"}:00`)
+      
+      const payload = {
+        title: newEvent.title,
+        description: newEvent.description,
+        event_date: eventDate.toISOString(),
+        location: newEvent.location || "En ligne",
+        is_online: !newEvent.location,
+        event_type: newEvent.type.toUpperCase(),
+        max_seats: newEvent.max_participants,
+        organizer: "EMLV Alumni"
+      }
+
+      await adminApi.createEvent(payload)
       setAddDialogOpen(false)
       setNewEvent({
         title: "",
@@ -141,8 +173,9 @@ export function EventsModule() {
         max_participants: 100,
       })
       refreshEvents()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to create event", err)
+      alert(err.message || "Erreur lors de la création de l'événement.")
     }
   }
 
@@ -484,7 +517,7 @@ export function EventsModule() {
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
-                      {event.attendees + (isRsvped ? 1 : 0)} / {event.maxAttendees} inscrits
+                      {(isRsvped && !event.is_registered) ? event.attendees + 1 : event.attendees} / {event.maxAttendees} inscrits
                     </span>
                     <span>{fillPercent}%</span>
                   </div>
@@ -496,6 +529,7 @@ export function EventsModule() {
                     variant={isRsvped ? "outline" : "default"}
                     size="sm"
                     className="w-full gap-2"
+                    disabled={isRsvped}
                     onClick={() => handleRSVP(event.id)}
                   >
                     {isRsvped ? (

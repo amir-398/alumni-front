@@ -11,6 +11,7 @@ import {
   LogOut,
   UserCircle,
   UserPlus,
+  ShieldHalf,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["super_admin", "admin", "alumni", "staff"] },
   { id: "events", label: "Evenements", icon: CalendarDays, roles: ["super_admin", "admin", "alumni", "staff"] },
   { id: "staff-management", label: "Gestion Staff", icon: UserPlus, roles: ["super_admin"] },
+  { id: "admin-management", label: "Gestion Admins", icon: ShieldHalf, roles: ["super_admin"] },
   { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni", "staff"] },
 ]
 

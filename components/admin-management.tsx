@@ -23,90 +23,42 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { UserPlus, Mail, CheckCircle, Clock, UserCircle } from "lucide-react"
+import { UserPlus, Mail, CheckCircle, Clock, UserCircle, ShieldCheck } from "lucide-react"
 
-interface StaffMember {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  module: string
-  specialite: string
-  status: "active" | "invited"
-  invitedAt: string
-}
-
-const mockStaff: StaffMember[] = [
-  {
-    id: "staff-1",
-    email: "staff@ecole-multimedia.com",
-    firstName: "Julie",
-    lastName: "Moreau",
-    module: "Developpement Web",
-    specialite: "React / Next.js",
-    status: "active",
-    invitedAt: "2025-09-01",
-  },
-  {
-    id: "staff-2",
-    email: "marc.dubois@ecole-multimedia.com",
-    firstName: "Marc",
-    lastName: "Dubois",
-    module: "Design UX/UI",
-    specialite: "Figma / Design System",
-    status: "active",
-    invitedAt: "2025-10-15",
-  },
-  {
-    id: "staff-3",
-    email: "sarah.nguyen@ecole-multimedia.com",
-    firstName: "",
-    lastName: "",
-    module: "",
-    specialite: "",
-    status: "invited",
-    invitedAt: "2026-02-18",
-  },
-]
-
-export function StaffManagement() {
+export function AdminManagement() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteFirstName, setInviteFirstName] = useState("")
   const [inviteLastName, setInviteLastName] = useState("")
-  const [inviteModule, setInviteModule] = useState("")
-  const [inviteSpecialite, setInviteSpecialite] = useState("")
   const [invited, setInvited] = useState(false)
-  const [staff, setStaff] = useState<any[]>([])
+  const [admins, setAdmins] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const refreshStaff = async () => {
+  const refreshAdmins = async () => {
     setLoading(true)
     try {
       const { adminApi } = await import("@/lib/api/admin")
       const res = await adminApi.getAlumni({ limit: 100 }) as any
-      const staffList = res.items
-        .filter((u: any) => u.role === "STAFF")
+      const adminList = res.items
+        .filter((u: any) => u.role === "ADMIN")
         .map((u: any) => ({
           id: u.id,
           email: u.email,
           firstName: u.profile?.first_name || "",
           lastName: u.profile?.last_name || "",
-          module: u.profile?.current_title || "", 
-          specialite: u.profile?.current_company || "", 
           status: u.is_verified ? "active" : "invited",
           invitedAt: u.last_login || u.id
         }))
-      setStaff(staffList)
+      setAdmins(adminList)
     } catch (err) {
-      console.error("Failed to load staff", err)
+      console.error("Failed to load admins", err)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    refreshStaff()
+    refreshAdmins()
   }, [])
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -117,24 +69,20 @@ export function StaffManagement() {
         email: inviteEmail,
         first_name: inviteFirstName,
         last_name: inviteLastName,
-        current_title: inviteModule,
-        current_company: inviteSpecialite,
-        role: "STAFF"
+        role: "ADMIN"
       })
       setInvited(true)
-      refreshStaff()
+      refreshAdmins()
       setTimeout(() => {
         setDialogOpen(false)
         setInvited(false)
         setInviteEmail("")
         setInviteFirstName("")
         setInviteLastName("")
-        setInviteModule("")
-        setInviteSpecialite("")
       }, 1500)
     } catch (err) {
-      console.error("Failed to invite staff", err)
-      alert("Erreur lors de l'invitation. Vérifiez si l'email existe déjà.")
+      console.error("Failed to invite admin", err)
+      alert("Erreur lors de l'invitation. Verifiez si l'email existe deja.")
     }
   }
 
@@ -142,19 +90,19 @@ export function StaffManagement() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Gestion du Staff</h2>
-          <p className="text-sm text-muted-foreground">Invitez et gerez les membres du staff</p>
+          <h2 className="text-xl font-bold text-foreground">Gestion des Administrateurs</h2>
+          <p className="text-sm text-muted-foreground">Gerez les administrateurs de la plateforme</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setInvited(false) } }}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="w-4 h-4" />
-              Inviter un staff
+            <Button className="gap-2 bg-sidebar-primary hover:bg-sidebar-primary/90">
+              <ShieldCheck className="w-4 h-4" />
+              Ajouter un Admin
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Inviter un membre du staff</DialogTitle>
+              <DialogTitle>Inviter un administrateur</DialogTitle>
             </DialogHeader>
             {!invited ? (
               <form onSubmit={handleInvite} className="flex flex-col gap-4">
@@ -171,9 +119,6 @@ export function StaffManagement() {
                     required
                     className="mt-1.5"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Un email d&apos;invitation sera envoye a cette adresse
-                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -197,28 +142,6 @@ export function StaffManagement() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="invite-module">Module</Label>
-                    <Input
-                      id="invite-module"
-                      value={inviteModule}
-                      onChange={(e) => setInviteModule(e.target.value)}
-                      placeholder="Optionnel"
-                      className="mt-1.5"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="invite-specialite">Specialite</Label>
-                    <Input
-                      id="invite-specialite"
-                      value={inviteSpecialite}
-                      onChange={(e) => setInviteSpecialite(e.target.value)}
-                      placeholder="Optionnel"
-                      className="mt-1.5"
-                    />
-                  </div>
-                </div>
                 <DialogFooter>
                   <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>Annuler</Button>
                   <Button type="submit" disabled={!inviteEmail.trim()} className="gap-2">
@@ -230,7 +153,7 @@ export function StaffManagement() {
             ) : (
               <div className="flex flex-col items-center gap-3 py-6">
                 <CheckCircle className="w-12 h-12 text-accent" />
-                <p className="text-foreground font-medium">Invitation envoyee</p>
+                <p className="text-foreground font-medium">Invitation Admin envoyee</p>
                 <p className="text-sm text-muted-foreground text-center">
                   Un email d&apos;invitation a ete envoye a <span className="font-medium">{inviteEmail}</span>
                 </p>
@@ -242,7 +165,7 @@ export function StaffManagement() {
 
       <Card className="border border-border">
         <CardHeader>
-          <CardTitle className="text-base">Membres du staff ({staff.length})</CardTitle>
+          <CardTitle className="text-base">Administrateurs ({admins.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-border overflow-hidden">
@@ -251,19 +174,17 @@ export function StaffManagement() {
                 <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">Membre</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Module</TableHead>
-                  <TableHead className="font-semibold">Specialite</TableHead>
                   <TableHead className="font-semibold">Statut</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {staff.map((member) => (
+                {admins.map((member) => (
                   <TableRow key={member.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-sidebar-primary/10 flex items-center justify-center">
                           {member.firstName ? (
-                            <span className="text-xs font-semibold text-primary">
+                            <span className="text-xs font-semibold text-sidebar-primary">
                               {member.firstName[0]}{member.lastName[0]}
                             </span>
                           ) : (
@@ -278,12 +199,6 @@ export function StaffManagement() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{member.email}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {member.module || "-"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {member.specialite || "-"}
-                    </TableCell>
                     <TableCell>
                       {member.status === "active" ? (
                         <Badge className="bg-accent/15 text-accent border border-accent/30 text-xs gap-1">

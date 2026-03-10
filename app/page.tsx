@@ -12,6 +12,7 @@ import { EventsModule } from "@/components/events-module"
 import { AlumniMyProfile } from "@/components/alumni-my-profile"
 import { StaffProfile } from "@/components/staff-profile"
 import { StaffManagement } from "@/components/staff-management"
+import { AdminManagement } from "@/components/admin-management"
 
 export default function Page() {
   const { isAuthenticated, user } = useAuth()
@@ -48,6 +49,7 @@ export default function Page() {
 
             {/* Super Admin only */}
             {role === "super_admin" && activeTab === "staff-management" && <StaffManagement />}
+            {role === "super_admin" && activeTab === "admin-management" && <AdminManagement />}
 
             {/* Alumni views */}
             {role === "alumni" && activeTab === "my-profile" && <AlumniMyProfile />}

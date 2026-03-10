@@ -24,8 +24,8 @@ A social hub listing upcoming events, managing RSVPs, and hosting memories of pa
 - As an **Alumni**, I want to see upcoming afterworks in my city so I can meet old friends.
 - As a **BDE Member**, I want to know how many alumni are coming to the Gala to order the right amount of catering.
 - As an **Alumni**, I want to browse photos of the 2023 Graduation Ceremony to reminisce about my time at school.
-- As an **Admin**, I want to create a new "Career Talk" event with title, date, location, description, and cover image.
-- As an **Admin**, I want to modify or cancel an existing event.
+- As an **Admin/Staff**, I want to create a new "Career Talk" event with title, date, location, description, and cover image.
+- As an **Admin/Staff**, I want to modify or cancel an existing event.
 - As an **Alumni**, I want to filter events by type (Gala, Afterwork, Conference, Alumni Dinner).
 - As an **Alumni**, I want to receive a reminder notification 24h before an event I'm attending (see `PRPs/06-notifications.md`).
 
@@ -90,8 +90,8 @@ A social hub listing upcoming events, managing RSVPs, and hosting memories of pa
 ### Technical Requirements
 
 - [ ] Images are optimized (WebP, lazy loading) to handle large photo galleries.
-- [ ] RSVP state is persisted in the database and synced across devices.
-- [ ] Role-based creation: Only `ADMIN` or specific `ORGANIZER` roles can post new events.
+- [ ] RSVP state is persisted in the database and synced across devices (API "Inscrit" status).
+- [ ] Role-based creation: Only `SUPER_ADMIN`, `ADMIN` or `STAFF` roles can post new events.
 
 ### Testing Steps
 

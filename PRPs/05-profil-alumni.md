@@ -15,6 +15,7 @@ A "My Profile" page with personal info display, inline editing, and directory vi
 ### Scope
 
 - **Profile Display:** Read-only view of information (name, email, diploma, job, company, city, LinkedIn).
+- **Staff Specific Fields:** For Staff members, job and company fields represent "Module" and "Specialty".
 - **Profile Editing:** Form to modify editable fields.
 - **Profile Photo:** Upload and cropping of a photo (avatar).
 - **Privacy Preferences:** Choice of directory visibility (visible / hidden profile).

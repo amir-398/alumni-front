@@ -19,6 +19,8 @@ A master data table with filtering, individual profile management, data import/e
 - **Individual Profile:** Detailed view and manual editing form for authorized users.
 - **Import/Export:** CSV/Excel tools for bulk data ingestion and mailing list generation.
 - **Activity Logs:** Audit trail of manual modifications (who, what, when).
+- **Staff Management (Super Admin):** View and invite new staff members.
+- **Admin Management (Super Admin):** View and invite new regular administrators.
 
 ### User Stories
 
@@ -27,6 +29,8 @@ A master data table with filtering, individual profile management, data import/e
 - As an **Intervenant**, I want to manually update an alumnus's email when they notify us of a change.
 - As an **Admin**, I want to export a list of alumni for a specific promotion to send them a targeted email.
 - As a **Super Admin**, I want to see the history of changes made to a profile to track data accuracy.
+- As a **Super Admin**, I want to invite new staff members and manage their access.
+- As a **Super Admin**, I want to invite new administrators to help manage the platform.
 - As a **Staff**, I want to view the dashboard statistics but without being able to access destructive operations (import, delete).
 - As an **Admin**, I want to filter the alumni list by promotion year to quickly find a specific cohort.
 
@@ -90,7 +94,8 @@ A master data table with filtering, individual profile management, data import/e
 
 - [ ] Responsive design (works on tablet/desktop).
 - [ ] Efficient loading (pagination/virtualization if list > 1000 items).
-- [ ] Secure access: only users with `ADMIN` or `STAFF` roles can access these routes.
+- [ ] Secure access: only users with `SUPER_ADMIN`, `ADMIN` or `STAFF` roles can access these routes.
+- [ ] Admin & Staff management is strictly limited to `SUPER_ADMIN`.
 
 ### Testing Steps
 

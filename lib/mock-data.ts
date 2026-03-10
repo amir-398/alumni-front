@@ -13,11 +13,13 @@ export interface Alumni {
   diploma: string;
   promoYear: number;
   status: AlumniStatus;
-  lastScrapDate: string;
+  lastScrapDate: string | null;
   currentJob: string;
   currentCompany: string;
   city: string;
   avatarUrl: string | null;
+  scrapeStatus?: string;
+  is_active: boolean;
 }
 
 export interface LogEntry {
