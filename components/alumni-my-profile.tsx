@@ -1,11 +1,21 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { mockAlumni } from "@/lib/mock-data"
+import { alumniApi } from "@/lib/api/alumni"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   ExternalLink,
   MapPin,
@@ -13,34 +23,106 @@ import {
   GraduationCap,
   Calendar,
   Mail,
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react"
 
 export function AlumniMyProfile() {
   const { user } = useAuth()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [message, setMessage] = useState("")
+  const [submitted, setSubmitted] = useState(false)
 
-  const alumniData = mockAlumni.find(
-    (a) => a.email.toLowerCase() === user?.email?.toLowerCase()
-  ) || {
-    id: user?.id || "",
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
-    linkedinUrl: "",
-    diploma: user?.diploma || "Non renseigne",
-    promoYear: user?.promoYear || 0,
-    status: "to_refresh" as const,
-    lastScrapDate: "",
-    currentJob: "Non renseigne",
-    currentCompany: "Non renseigne",
-    city: "Non renseigne",
-    avatarUrl: null,
+  const [alumniData, setAlumniData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    alumniApi.getMyProfile().then((item: any) => {
+      // Map API response
+      setAlumniData({
+        id: item.id || user?.id || "",
+        firstName: item.first_name || user?.firstName || "",
+        lastName: item.last_name || user?.lastName || "",
+        email: item.email || user?.email || "",
+        linkedinUrl: item.linkedin_url || "",
+        diploma: item.diploma || user?.diploma || "Non renseigne",
+        promoYear: item.graduation_year || user?.promoYear || 0,
+        status: item.status || "to_refresh",
+        lastScrapDate: "",
+        currentJob: item.current_title || "Non renseigne",
+        currentCompany: item.current_company || "Non renseigne",
+        city: item.city || "Non renseigne",
+        avatarUrl: null,
+      })
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [user])
+
+  const handleSubmitSignal = () => {
+    setSubmitted(true)
+    setMessage("")
+    // We could call alumniApi.createCorrection here as well
+    alumniApi.createCorrection({ field: "general", proposed_value: message })
+    setTimeout(() => {
+      setDialogOpen(false)
+    }, 1500)
+  }
+
+  if (loading) {
+    return <div className="p-8 text-center text-muted-foreground">Chargement de votre profil...</div>
+  }
+
+  if (!alumniData && !loading) {
+    return <div className="p-8 text-center text-muted-foreground">Impossible de charger votre profil. Veuillez verifier votre connexion.</div>
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Mon profil</h2>
-        <p className="text-sm text-muted-foreground">Vos informations personnelles (lecture seule)</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Mon profil</h2>
+          <p className="text-sm text-muted-foreground">Vos informations personnelles (lecture seule)</p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setSubmitted(false); setMessage("") } }}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="gap-2 border-chart-3 text-chart-3 hover:bg-chart-3/10">
+              <AlertTriangle className="w-4 h-4" />
+              Signaler une mise a jour
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Signaler des informations obsoletes</DialogTitle>
+            </DialogHeader>
+            {!submitted ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Indiquez quelles informations ne sont plus a jour. Un administrateur mettra votre profil a jour.
+                </p>
+                <Textarea
+                  placeholder="Ex: J'ai change d'entreprise, je suis maintenant chez..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+                  <Button onClick={handleSubmitSignal} disabled={!message.trim()}>
+                    Envoyer le signalement
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-3 py-6">
+                <CheckCircle className="w-12 h-12 text-accent" />
+                <p className="text-foreground font-medium">Signalement envoye</p>
+                <p className="text-sm text-muted-foreground text-center">
+                  Un administrateur prendra en charge la mise a jour de votre profil.
+                </p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

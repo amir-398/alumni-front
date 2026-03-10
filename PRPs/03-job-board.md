@@ -16,7 +16,8 @@ A job listing platform with simplified posting, AI-powered targeting, and restri
 
 - **Job Posting Form:** Fields for Job Type (CDI, CDD, Freelance), Title, Company, Link, and Description.
 - **AI Tagging & Suggestions:** The system analyzes the job description to suggest which graduation years or degrees should be notified.
-- **Filtering:** Browse by contract type, company, or date.
+- **Job Detail Sheet:** Full details, company info, and external link.
+- **Approval Workflow:** Offers must be approved by Super Admin, Admin, or Staff before becoming public.
 - **Access Control:** Job details are visible only to authenticated alumni members.
 
 ### User Stories
@@ -27,6 +28,7 @@ A job listing platform with simplified posting, AI-powered targeting, and restri
 - As a **Visitor**, I want to see that a job board exists, but I must log in to see the details.
 - As an **Alumni**, I want to edit a job posting I published to correct a mistake.
 - As an **Alumni**, I want to delete a job posting I published when the position is filled.
+- As a **Super Admin / Admin / Staff**, I want to review pending job offers and approve or reject them to maintain quality.
 - As an **Alumni**, I want to receive a notification when a new job matches my profile (see `PRPs/06-notifications.md`).
 
 ## Technical Context
@@ -76,7 +78,8 @@ A job listing platform with simplified posting, AI-powered targeting, and restri
 
 - [ ] Users can submit the job posting form with all required fields.
 - [ ] Description is sent to the AI service, and it returns relevant promotion tags.
-- [ ] Authenticated users can see the full job description and external links.
+- [ ] Authenticated users can see the full job description and external links of approved jobs.
+- [ ] Admin/Staff can see pending jobs and take action (approve/reject).
 - [ ] Non-authenticated users are redirected to the login page when clicking on a job.
 
 ### Technical Requirements

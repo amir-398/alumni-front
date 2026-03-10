@@ -8,11 +8,11 @@ import {
   LayoutDashboard,
   Briefcase,
   CalendarDays,
-  ClipboardList,
   LogOut,
   Menu,
   X,
   UserCircle,
+  UserPlus,
 } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
@@ -30,12 +30,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["admin", "staff"] },
-  { id: "directory", label: "Annuaire", icon: Users, roles: ["admin", "staff"] },
-  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["admin", "alumni", "staff"] },
-  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["admin", "alumni", "staff"] },
-  { id: "logs", label: "Historique", icon: ClipboardList, roles: ["admin", "staff"] },
-  { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni"] },
+  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["super_admin", "admin", "staff"] },
+  { id: "directory", label: "Annuaire", icon: Users, roles: ["super_admin", "admin", "staff"] },
+  { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["super_admin", "admin", "alumni", "staff"] },
+  { id: "events", label: "Evenements", icon: CalendarDays, roles: ["super_admin", "admin", "alumni", "staff"] },
+  { id: "staff-management", label: "Gestion Staff", icon: UserPlus, roles: ["super_admin"] },
+  { id: "my-profile", label: "Mon profil", icon: UserCircle, roles: ["alumni", "staff"] },
 ]
 
 export function MobileHeader({ activeTab, onTabChange }: MobileHeaderProps) {
@@ -84,7 +84,7 @@ export function MobileHeader({ activeTab, onTabChange }: MobileHeaderProps) {
               {user?.firstName} {user?.lastName}
             </p>
             <p className="text-xs text-muted-foreground">
-              {user?.role === "admin" ? "Administration" : user?.role === "staff" ? "Staff" : "Espace Alumni"}
+              {user?.role === "super_admin" ? "Super Admin" : user?.role === "admin" ? "Administration" : user?.role === "staff" ? "Staff" : "Espace Alumni"}
             </p>
           </div>
           <ul className="flex flex-col gap-1">

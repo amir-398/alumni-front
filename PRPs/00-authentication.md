@@ -10,14 +10,14 @@ Authentication is the foundation of all other modules. Without reliable identifi
 
 ## What
 
-A multi-method authentication system with management for 3 distinct roles and session persistence.
+A multi-method authentication system with management for 4 distinct roles and session persistence.
 
 ### Scope
 
 - **Email/Password Login:** Classic authentication with server-side validation.
 - **Magic Link (V2):** Send a login link via email, without a password.
 - **LinkedIn OAuth (V2):** Login via LinkedIn account for alumni.
-- **Role Management:** 3 access levels — `admin`, `staff`, `alumni`.
+- **Role Management:** 4 access levels — `super_admin`, `admin`, `staff`, `alumni`.
 - **Session Persistence:** Stored JWT token (HttpOnly cookie or localStorage) to maintain connection across page reloads.
 - **Registration:** Registration form for new alumni with email validation.
 
@@ -26,7 +26,8 @@ A multi-method authentication system with management for 3 distinct roles and se
 - As an **Alumni**, I want to log in with my email and password to access the platform.
 - As an **Alumni**, I want to receive a magic link via email to log in without a password (V2).
 - As an **Alumni**, I want to log in via LinkedIn to simplify access (V2).
-- As an **Admin**, I want only users with the `admin` or `staff` role to be able to access the administration dashboard.
+- As an **Admin**, I want only users with the `super_admin`, `admin` or `staff` role to be able to access the administration dashboard.
+- As a **Super Admin**, I want to be the only one able to manage staff members and other administrators.
 - As an **Unauthenticated User**, I want to be redirected to the login page if I try to access a protected section.
 - As an **Alumni**, I want to stay logged in even if I refresh the page.
 
@@ -63,15 +64,17 @@ A multi-method authentication system with management for 3 distinct roles and se
 
 ### Roles and Permissions
 
-| Section            | `admin` | `staff` | `alumni` |
-| ------------------ | ------- | ------- | -------- |
-| Dashboard          | ✅      | ✅      | ❌       |
-| Directory (admin)  | ✅      | ✅      | ❌       |
-| Directory (public) | ✅      | ✅      | ✅       |
-| Job Board          | ✅      | ✅      | ✅       |
-| Events             | ✅      | ✅      | ✅       |
-| Logs               | ✅      | ✅      | ❌       |
-| My Profile         | ❌      | ❌      | ✅       |
+| Section            | `super_admin` | `admin` | `staff` | `alumni` |
+| ------------------ | ------------- | ------- | ------- | -------- |
+| Dashboard          | ✅            | ✅      | ✅      | ❌       |
+| Directory (admin)  | ✅            | ✅      | ✅      | ❌       |
+| Directory (public) | ✅            | ✅      | ✅      | ✅       |
+| Job Board          | ✅            | ✅      | ✅      | ✅       |
+| Events             | ✅            | ✅      | ✅      | ✅       |
+| Logs               | ✅            | ✅      | ✅      | ❌       |
+| Staff Management   | ✅            | ❌      | ❌      | ❌       |
+| Admin Management   | ✅            | ❌      | ❌      | ❌       |
+| My Profile         | ❌            | ❌      | ✅      | ✅       |
 
 ### Components
 
