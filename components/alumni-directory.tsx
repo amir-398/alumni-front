@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { mockAlumni, type Alumni } from "@/lib/mock-data"
+import { alumniApi } from "@/lib/api/alumni"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,14 +56,94 @@ export function AlumniDirectory() {
   const [filterPromo, setFilterPromo] = useState("all")
   const [sortField, setSortField] = useState<SortField>("lastName")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
-  const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null)
+  const [selectedAlumni, setSelectedAlumni] = useState<any | null>(null)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [newAlumni, setNewAlumni] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    diploma: "",
+    promoYear: new Date().getFullYear(),
+    linkedinUrl: "",
+    currentJob: "",
+    currentCompany: "",
+    city: ""
+  })
 
-  const diplomas = useMemo(() => [...new Set(mockAlumni.map((a) => a.diploma))], [])
-  const promos = useMemo(() => [...new Set(mockAlumni.map((a) => a.promoYear))].sort((a, b) => b - a), [])
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+
+  const refreshAlumni = async () => {
+    try {
+      const res = await alumniApi.getDirectory({ limit: 100 })
+      const mapped = res.items.map((item: any) => ({
+        id: item.user_id, // Important: Use user_id for API calls
+        profile_id: item.id,
+        firstName: item.first_name || "",
+        lastName: item.last_name || "",
+        email: item.email || "",
+        linkedinUrl: item.linkedin_url || "",
+        diploma: item.diploma || "",
+        promoYear: item.graduation_year || new Date().getFullYear(),
+        status: item.status || "up_to_date",
+        currentJob: item.current_title || "",
+        currentCompany: item.current_company || "",
+        city: item.city || "",
+      }))
+      setData(mapped)
+      return mapped
+    } catch (err) {
+      console.error("Failed to load alumni", err)
+      return []
+    } finally {
+      setInitialLoading(false)
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refreshAlumni()
+  }, [])
+
+  const handleCreateAlumni = async () => {
+    try {
+      const { adminApi } = await import("@/lib/api/admin")
+      await adminApi.createAlumni({
+        first_name: newAlumni.firstName,
+        last_name: newAlumni.lastName,
+        email: newAlumni.email,
+        graduation_year: Number(newAlumni.promoYear),
+        diploma: newAlumni.diploma,
+        linkedin_url: newAlumni.linkedinUrl,
+        current_title: newAlumni.currentJob,
+        current_company: newAlumni.currentCompany,
+        city: newAlumni.city,
+        role: "alumni"
+      })
+      setAddDialogOpen(false)
+      refreshAlumni()
+      setNewAlumni({
+        firstName: "",
+        lastName: "",
+        email: "",
+        diploma: "",
+        promoYear: new Date().getFullYear(),
+        linkedinUrl: "",
+        currentJob: "",
+        currentCompany: "",
+        city: ""
+      })
+    } catch (err) {
+      console.error("Failed to create alumni", err)
+    }
+  }
+
+  const diplomas = useMemo(() => Array.from(new Set(data.map((a) => a.diploma))).filter(Boolean), [data])
+  const promos = useMemo(() => Array.from(new Set(data.map((a) => a.promoYear))).filter(Boolean).sort((a: any, b: any) => b - a), [data])
 
   const filtered = useMemo(() => {
-    let result = [...mockAlumni]
+    let result = [...data]
 
     if (search) {
       const q = search.toLowerCase()
@@ -71,7 +151,7 @@ export function AlumniDirectory() {
         (a) =>
           a.firstName.toLowerCase().includes(q) ||
           a.lastName.toLowerCase().includes(q) ||
-          a.email.toLowerCase().includes(q) ||
+          (a.email && a.email.toLowerCase().includes(q)) ||
           a.currentCompany.toLowerCase().includes(q) ||
           a.currentJob.toLowerCase().includes(q)
       )
@@ -84,20 +164,20 @@ export function AlumniDirectory() {
       result = result.filter((a) => a.status === filterStatus)
     }
     if (filterPromo !== "all") {
-      result = result.filter((a) => a.promoYear === parseInt(filterPromo))
+      result = result.filter((a) => String(a.promoYear) === filterPromo)
     }
 
     result.sort((a, b) => {
       let cmp = 0
       if (sortField === "lastName") cmp = a.lastName.localeCompare(b.lastName)
       else if (sortField === "promoYear") cmp = a.promoYear - b.promoYear
-      else if (sortField === "diploma") cmp = a.diploma.localeCompare(b.diploma)
-      else if (sortField === "status") cmp = a.status.localeCompare(b.status)
+      else if (sortField === "diploma") cmp = (a.diploma || "").localeCompare(b.diploma || "")
+      else if (sortField === "status") cmp = (a.status || "").localeCompare(b.status || "")
       return sortDir === "asc" ? cmp : -cmp
     })
 
     return result
-  }, [search, filterDiploma, filterStatus, filterPromo, sortField, sortDir])
+  }, [search, filterDiploma, filterStatus, filterPromo, sortField, sortDir, data])
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -117,8 +197,33 @@ export function AlumniDirectory() {
     )
   }
 
+  if (initialLoading) {
+    return <div className="p-8 text-center text-muted-foreground">Chargement de l'annuaire...</div>
+  }
+
+  if (data.length === 0 && !initialLoading) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Aucun alumni trouve ou erreur de connexion au serveur.
+      </div>
+    )
+  }
+
   if (selectedAlumni) {
-    return <AlumniProfile alumni={selectedAlumni} onBack={() => setSelectedAlumni(null)} />
+    return (
+      <AlumniProfile 
+        alumni={selectedAlumni} 
+        onBack={() => setSelectedAlumni(null)} 
+        onUpdate={async () => {
+          // Refresh background list and update selected alumni reference
+          const newData = await refreshAlumni()
+          if (selectedAlumni) {
+            const updated = newData.find((a: any) => a.id === selectedAlumni.id)
+            if (updated) setSelectedAlumni(updated)
+          }
+        }} 
+      />
+    )
   }
 
   return (
@@ -140,25 +245,44 @@ export function AlumniDirectory() {
               <DialogHeader>
                 <DialogTitle>Ajouter un alumni</DialogTitle>
               </DialogHeader>
-              <div className="flex flex-col gap-4">
+               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="add-firstname">Prenom</Label>
-                    <Input id="add-firstname" placeholder="Prenom" className="mt-1" />
+                    <Input 
+                      id="add-firstname" 
+                      placeholder="Prenom" 
+                      className="mt-1" 
+                      value={newAlumni.firstName}
+                      onChange={(e) => setNewAlumni({ ...newAlumni, firstName: e.target.value })}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="add-lastname">Nom</Label>
-                    <Input id="add-lastname" placeholder="Nom" className="mt-1" />
+                    <Input 
+                      id="add-lastname" 
+                      placeholder="Nom" 
+                      className="mt-1" 
+                      value={newAlumni.lastName}
+                      onChange={(e) => setNewAlumni({ ...newAlumni, lastName: e.target.value })}
+                    />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="add-email">Email</Label>
-                  <Input id="add-email" type="email" placeholder="email@example.com" className="mt-1" />
+                  <Input 
+                    id="add-email" 
+                    type="email" 
+                    placeholder="email@example.com" 
+                    className="mt-1" 
+                    value={newAlumni.email}
+                    onChange={(e) => setNewAlumni({ ...newAlumni, email: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="add-diploma">Diplome</Label>
-                    <Select>
+                    <Select value={newAlumni.diploma} onValueChange={(val) => setNewAlumni({ ...newAlumni, diploma: val })}>
                       <SelectTrigger id="add-diploma" className="mt-1">
                         <SelectValue placeholder="Choisir" />
                       </SelectTrigger>
@@ -171,40 +295,62 @@ export function AlumniDirectory() {
                   </div>
                   <div>
                     <Label htmlFor="add-promo">Promotion</Label>
-                    <Select>
-                      <SelectTrigger id="add-promo" className="mt-1">
-                        <SelectValue placeholder="Annee" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {promos.map((p) => (
-                          <SelectItem key={p} value={p.toString()}>{p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input 
+                      id="add-promo" 
+                      type="number" 
+                      placeholder="Annee" 
+                      className="mt-1" 
+                      value={newAlumni.promoYear}
+                      onChange={(e) => setNewAlumni({ ...newAlumni, promoYear: Number(e.target.value) })}
+                    />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="add-linkedin">LinkedIn</Label>
-                  <Input id="add-linkedin" placeholder="https://linkedin.com/in/..." className="mt-1" />
+                  <Input 
+                    id="add-linkedin" 
+                    placeholder="https://linkedin.com/in/..." 
+                    className="mt-1" 
+                    value={newAlumni.linkedinUrl}
+                    onChange={(e) => setNewAlumni({ ...newAlumni, linkedinUrl: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="add-job">Poste</Label>
-                    <Input id="add-job" placeholder="Poste actuel" className="mt-1" />
+                    <Input 
+                      id="add-job" 
+                      placeholder="Poste actuel" 
+                      className="mt-1" 
+                      value={newAlumni.currentJob}
+                      onChange={(e) => setNewAlumni({ ...newAlumni, currentJob: e.target.value })}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="add-company">Entreprise</Label>
-                    <Input id="add-company" placeholder="Entreprise" className="mt-1" />
+                    <Input 
+                      id="add-company" 
+                      placeholder="Entreprise" 
+                      className="mt-1" 
+                      value={newAlumni.currentCompany}
+                      onChange={(e) => setNewAlumni({ ...newAlumni, currentCompany: e.target.value })}
+                    />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="add-city">Ville</Label>
-                  <Input id="add-city" placeholder="Ville" className="mt-1" />
+                  <Input 
+                    id="add-city" 
+                    placeholder="Ville" 
+                    className="mt-1" 
+                    value={newAlumni.city}
+                    onChange={(e) => setNewAlumni({ ...newAlumni, city: e.target.value })}
+                  />
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Annuler</Button>
-                <Button onClick={() => setAddDialogOpen(false)}>Ajouter</Button>
+                <Button onClick={handleCreateAlumni} disabled={!newAlumni.email || !newAlumni.lastName}>Ajouter</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>}

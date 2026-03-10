@@ -77,31 +77,62 @@ export function StaffManagement() {
   const [inviteModule, setInviteModule] = useState("")
   const [inviteSpecialite, setInviteSpecialite] = useState("")
   const [invited, setInvited] = useState(false)
-  const [staff, setStaff] = useState(mockStaff)
+  const [staff, setStaff] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault()
-    const newMember: StaffMember = {
-      id: `staff-${Date.now()}`,
-      email: inviteEmail,
-      firstName: inviteFirstName,
-      lastName: inviteLastName,
-      module: inviteModule,
-      specialite: inviteSpecialite,
-      status: "invited",
-      invitedAt: new Date().toISOString().split("T")[0],
+  const refreshStaff = async () => {
+    setLoading(true)
+    try {
+      const { adminApi } = await import("@/lib/api/admin")
+      const res = await adminApi.getAlumni({ limit: 100 }) as any
+      const staffList = res.items
+        .filter((u: any) => u.role === "staff" || u.role === "admin")
+        .map((u: any) => ({
+          id: u.id,
+          email: u.email,
+          firstName: u.profile?.first_name || "",
+          lastName: u.profile?.last_name || "",
+          module: u.profile?.current_title || "", 
+          specialite: u.profile?.current_company || "", 
+          status: "active",
+          invitedAt: u.last_login || u.id
+        }))
+      setStaff(staffList)
+    } catch (err) {
+      console.error("Failed to load staff", err)
+    } finally {
+      setLoading(false)
     }
-    setStaff([...staff, newMember])
-    setInvited(true)
-    setTimeout(() => {
-      setDialogOpen(false)
-      setInvited(false)
-      setInviteEmail("")
-      setInviteFirstName("")
-      setInviteLastName("")
-      setInviteModule("")
-      setInviteSpecialite("")
-    }, 1500)
+  }
+
+  useState(() => {
+    refreshStaff()
+  })
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const { adminApi } = await import("@/lib/api/admin")
+      await adminApi.createAlumni({
+        email: inviteEmail,
+        first_name: inviteFirstName,
+        last_name: inviteLastName,
+        role: "staff"
+      })
+      setInvited(true)
+      refreshStaff()
+      setTimeout(() => {
+        setDialogOpen(false)
+        setInvited(false)
+        setInviteEmail("")
+        setInviteFirstName("")
+        setInviteLastName("")
+        setInviteModule("")
+        setInviteSpecialite("")
+      }, 1500)
+    } catch (err) {
+      console.error("Failed to invite staff", err)
+    }
   }
 
   return (

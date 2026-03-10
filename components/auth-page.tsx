@@ -11,6 +11,7 @@ import { Eye, EyeOff, LogIn, Shield, GraduationCap, Users, Crown, UserPlus } fro
 import Image from "next/image"
 
 export function AuthPage() {
+  console.log("AuthPage Rendering...")
   const { login, registerSuperAdmin, hasSuperAdmin, superAdminEmail, superAdminPassword } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
@@ -27,20 +28,23 @@ export function AuthPage() {
   const [regFirstName, setRegFirstName] = useState("")
   const [regLastName, setRegLastName] = useState("")
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
-    setTimeout(() => {
-      const result = login(loginEmail, loginPassword)
+    try {
+      const result = await login(loginEmail, loginPassword)
       if (!result.success) {
         setError(result.error || "Erreur de connexion")
       }
+    } catch (err) {
+      setError("Une erreur inattendue est survenue")
+    } finally {
       setLoading(false)
-    }, 600)
+    }
   }
 
-  const handleRegisterSuperAdmin = (e: React.FormEvent) => {
+  const handleRegisterSuperAdmin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
@@ -54,8 +58,8 @@ export function AuthPage() {
     }
 
     setLoading(true)
-    setTimeout(() => {
-      const result = registerSuperAdmin({
+    try {
+      const result = await registerSuperAdmin({
         email: regEmail,
         password: regPassword,
         firstName: regFirstName,
@@ -64,20 +68,26 @@ export function AuthPage() {
       if (!result.success) {
         setError(result.error || "Erreur lors de l'inscription")
       }
+    } catch (err) {
+      setError("Erreur lors de la creation du compte")
+    } finally {
       setLoading(false)
-    }, 600)
+    }
   }
 
-  const handleDemoLogin = (email: string, password: string) => {
+  const handleDemoLogin = async (email: string, password: string) => {
     setError("")
     setLoading(true)
-    setTimeout(() => {
-      const result = login(email, password)
+    try {
+      const result = await login(email, password)
       if (!result.success) {
         setError(result.error || "Erreur de connexion")
       }
+    } catch (err) {
+      setError("Erreur lors de la connexion")
+    } finally {
       setLoading(false)
-    }, 400)
+    }
   }
 
   return (

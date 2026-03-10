@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { authApi } from "./api/auth"
 
 export type UserRole = "super_admin" | "admin" | "alumni" | "staff"
 
@@ -14,118 +15,122 @@ export interface User {
   diploma?: string
 }
 
+const mapBackendUser = (backendUser: any): User | null => {
+  if (!backendUser || !backendUser.id) return null
+  return {
+    id: String(backendUser.id),
+    email: backendUser.email || "",
+    firstName: backendUser.profile?.first_name || backendUser.first_name || "",
+    lastName: backendUser.profile?.last_name || backendUser.last_name || "",
+    role: (backendUser.role || "alumni").toLowerCase() as UserRole,
+    promoYear: backendUser.profile?.graduation_year,
+    diploma: backendUser.profile?.diploma,
+  }
+}
+
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   hasSuperAdmin: boolean
   superAdminEmail: string | null
   superAdminPassword: string | null
-  login: (email: string, password: string) => { success: boolean; error?: string }
-  registerSuperAdmin: (data: { email: string; password: string; firstName: string; lastName: string }) => { success: boolean; error?: string }
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  registerSuperAdmin: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<{ success: boolean; error?: string }>
   logout: () => void
 }
-
-// Mock users database - starts WITHOUT a super_admin to simulate first-time setup
-const MOCK_USERS: (User & { password: string })[] = [
-  {
-    id: "admin-1",
-    email: "admin@ecole-multimedia.com",
-    password: "admin123",
-    firstName: "Marie",
-    lastName: "Dupont",
-    role: "admin",
-  },
-  {
-    id: "alumni-1",
-    email: "sophie.martin@email.com",
-    password: "alumni123",
-    firstName: "Sophie",
-    lastName: "Martin",
-    role: "alumni",
-    promoYear: 2022,
-    diploma: "Master Marketing Digital",
-  },
-  {
-    id: "alumni-2",
-    email: "thomas.durand@email.com",
-    password: "alumni123",
-    firstName: "Thomas",
-    lastName: "Durand",
-    role: "alumni",
-    promoYear: 2021,
-    diploma: "Master Finance",
-  },
-  {
-    id: "staff-1",
-    email: "staff@ecole-multimedia.com",
-    password: "staff123",
-    firstName: "Julie",
-    lastName: "Moreau",
-    role: "staff",
-  },
-]
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [hasSuperAdmin, setHasSuperAdmin] = useState(() =>
-    MOCK_USERS.some((u) => u.role === "super_admin")
-  )
-  const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(() => {
-    const sa = MOCK_USERS.find((u) => u.role === "super_admin")
-    return sa?.email ?? null
-  })
-  const [superAdminPassword, setSuperAdminPassword] = useState<string | null>(() => {
-    const sa = MOCK_USERS.find((u) => u.role === "super_admin")
-    return sa?.password ?? null
-  })
+  const [hasSuperAdmin, setHasSuperAdmin] = useState(true) 
+  const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(null)
+  const [superAdminPassword, setSuperAdminPassword] = useState<string | null>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
 
-  const login = useCallback((email: string, password: string) => {
-    const found = MOCK_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    )
-    if (!found) {
-      return { success: false, error: "Email ou mot de passe incorrect" }
+  console.log("AuthProvider Render:", { user: !!user, isInitializing, hasSuperAdmin })
+
+  useEffect(() => {
+    const runInit = async () => {
+      console.log("[Auth] Starting async initialization...")
+      try {
+        const setupRes = await authApi.checkSetupRequired()
+        console.log("[Auth] Server setup status:", setupRes)
+        setHasSuperAdmin(!setupRes.required)
+        
+        const token = localStorage.getItem("access_token")
+        if (token) {
+          const userMe = await authApi.getMe()
+          const mapped = mapBackendUser(userMe)
+          if (mapped) setUser(mapped)
+        }
+      } catch (err) {
+        console.error("[Auth] Initialization crashed:", err)
+      } finally {
+        console.log("[Auth] Initialization call finished")
+        setIsInitializing(false)
+      }
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _pwd, ...userData } = found
-    setUser(userData)
-    return { success: true }
+
+    runInit()
+    
+    // Safety timeout to never stay on a white page
+    const timer = setTimeout(() => {
+      console.log("[Auth] Safety timeout reached, forcing render")
+      setIsInitializing(false)
+    }, 3000)
+    
+    return () => clearTimeout(timer)
   }, [])
 
-  const registerSuperAdmin = useCallback((data: { email: string; password: string; firstName: string; lastName: string }) => {
-    // Only allow if no super admin exists yet
-    const superAdminExists = MOCK_USERS.some((u) => u.role === "super_admin")
-    if (superAdminExists) {
-      return { success: false, error: "Un super administrateur existe deja" }
-    }
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const tokenRes = await authApi.login(email, password)
+      localStorage.setItem("access_token", tokenRes.access_token)
+      if (tokenRes.refresh_token) {
+        localStorage.setItem("refresh_token", tokenRes.refresh_token)
+      }
 
-    const exists = MOCK_USERS.find(
-      (u) => u.email.toLowerCase() === data.email.toLowerCase()
-    )
-    if (exists) {
-      return { success: false, error: "Un compte avec cet email existe deja" }
+      const userMe = await authApi.getMe()
+      setUser(mapBackendUser(userMe))
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Erreur lors de la connexion" }
     }
-
-    const newUser: User = {
-      id: `superadmin-${Date.now()}`,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: "super_admin",
-    }
-    MOCK_USERS.push({ ...newUser, password: data.password })
-    setUser(newUser)
-    setHasSuperAdmin(true)
-    setSuperAdminEmail(data.email)
-    setSuperAdminPassword(data.password)
-    return { success: true }
   }, [])
 
-  const logout = useCallback(() => {
+  const registerSuperAdmin = useCallback(async (data: { email: string; password: string; firstName: string; lastName: string }) => {
+    try {
+      await authApi.setup(data.email, data.password, data.firstName, data.lastName)
+      setHasSuperAdmin(true)
+      // Auto login
+      const tokenRes = await login(data.email, data.password)
+      return tokenRes
+    } catch (error: any) {
+      return { success: false, error: error.message || "Erreur lors de la creation du super administrateur" }
+    }
+  }, [login])
+
+  const logout = useCallback(async () => {
+    const refreshToken = localStorage.getItem("refresh_token")
+    if (refreshToken) {
+      await authApi.logout(refreshToken).catch(() => { })
+    }
+    localStorage.removeItem("access_token")
+    localStorage.removeItem("refresh_token")
     setUser(null)
   }, [])
+
+  if (isInitializing) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm animate-pulse text-muted-foreground">Initialisation du Hub Alumni...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <AuthContext.Provider
