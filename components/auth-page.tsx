@@ -319,6 +319,16 @@ export function AuthPage() {
                     <span className="flex-1 text-left">Staff</span>
                     <span className="text-xs text-muted-foreground">staff1@ecole-multimedia.com</span>
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    disabled={loading}
+                    onClick={() => handleDemoLogin("amir.meb398@gmail.com", "password123")}
+                  >
+                    <GraduationCap className="w-4 h-4 text-accent" />
+                    <span className="flex-1 text-left">Amir Meberbeche (Alumni)</span>
+                    <span className="text-xs text-muted-foreground">amir.meb398@gmail.com</span>
+                  </Button>
                 </div>
               </div>
             </CardContent>
