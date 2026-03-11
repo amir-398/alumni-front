@@ -29,7 +29,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: ["super_admin", "admin", "staff"] },
-  { id: "directory", label: "Annuaire", icon: Users, roles: ["super_admin", "admin", "staff"] },
+  { id: "directory", label: "Alumni", icon: Users, roles: ["super_admin", "admin", "staff"] },
   { id: "jobs", label: "Annonces", icon: Briefcase, roles: ["super_admin", "admin", "alumni", "staff"] },
   { id: "events", label: "Evenements", icon: CalendarDays, roles: ["super_admin", "admin", "alumni", "staff"] },
   { id: "staff-management", label: "Gestion Staff", icon: UserPlus, roles: ["super_admin"] },

@@ -34,6 +34,24 @@ export const adminApi = {
     });
   },
 
+  scrapeAlumni: async (id: string | number) => {
+    return await fetchAPI(`/api/v1/admin/alumni/${id}/scrape`, {
+      method: "POST",
+    });
+  },
+
+  scrapeAllAlumni: async () => {
+    return await fetchAPI("/api/v1/admin/alumni/scrape-all", {
+      method: "POST",
+    });
+  },
+
+  linkedinAuth: async () => {
+    return await fetchAPI("/api/v1/admin/alumni/linkedin-auth", {
+      method: "POST",
+    });
+  },
+
   // --- JOBS ---
   getJobs: async (params?: PaginationParams) => {
     return await fetchAPI("/api/v1/admin/jobs/", {
