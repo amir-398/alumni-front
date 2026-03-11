@@ -1,7 +1,9 @@
-description = "Explore codebase, create implementation plan, code, and test following the EPCT workflow."
+description = "EPCT for small features: Explore, Plan, Code, Test. Use for focused tasks (bugfix, small UI change, tiny feature). For larger scope, use create-prp first."
 
 prompt = """
-# Explore, Plan, Code, Test Workflow
+# Explore, Plan, Code, Test Workflow (small features)
+
+**Use this command for small, focused tasks:** bugfixes, small UI changes, tiny features, refactors. For larger or multi-file features, use `gemini create-prp` first to define a PRP, then implement.
 
 At the end of this message, I will ask you to do something.
 Please follow the "Explore, Plan, Code, Test" workflow when you start.

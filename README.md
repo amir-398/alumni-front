@@ -59,8 +59,8 @@ This project is optimized for AI-assisted development using **Gemini**.
 
 ### Custom Commands
 
-- `gemini create-prp "feature"`: Research and generate a new PRP.
-- `gemini epct "task"`: Full development cycle (Explore, Plan, Code, Test).
+- `gemini create-prp "feature"`: Research and generate a new PRP (features importantes).
+- `gemini epct "task"`: Cycle EPCT pour **petites features** (Explore, Plan, Code, Test) — bugfixes, petits changements UI, tâches ciblées.
 
 ## 📄 Documentation
 

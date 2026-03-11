@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { alumniApi } from "@/lib/api/alumni"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +41,8 @@ import {
   ChevronUp,
   Eye,
   Plus,
+  Linkedin,
+  Loader2,
 } from "lucide-react"
 import { AlumniProfile } from "@/components/alumni-profile"
 
@@ -73,6 +75,12 @@ export function AlumniDirectory() {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoading, setInitialLoading] = useState(true)
+  const [scraping, setScraping] = useState(false)
+  const [scrapeResult, setScrapeResult] = useState<{ success: number; failed: number; total: number } | null>(null)
+  const [linkedinAuthStatus, setLinkedinAuthStatus] = useState<"idle" | "authenticating" | "success" | "failed">("idle")
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const refreshAlumni = async () => {
     try {
@@ -122,7 +130,7 @@ export function AlumniDirectory() {
         current_title: newAlumni.currentJob,
         current_company: newAlumni.currentCompany,
         city: newAlumni.city,
-        role: "alumni"
+        role: "ALUMNI"
       })
       setAddDialogOpen(false)
       refreshAlumni()
@@ -140,6 +148,182 @@ export function AlumniDirectory() {
     } catch (err) {
       console.error("Failed to create alumni", err)
     }
+  }
+
+  const handleLinkedinReAuth = async () => {
+    setLinkedinAuthStatus("authenticating")
+    try {
+      const res = await fetch("/api/linkedin-auth", { method: "POST" })
+      if (!res.ok) throw new Error("Auth failed")
+      setLinkedinAuthStatus("success")
+    } catch {
+      setLinkedinAuthStatus("failed")
+    }
+  }
+
+  const handleScrapeAll = async () => {
+    setScraping(true)
+    setScrapeResult(null)
+    setLinkedinAuthStatus("idle")
+    try {
+      const { adminApi } = await import("@/lib/api/admin")
+      const result: any = await adminApi.scrapeAllAlumni()
+      const successCount = result.success?.length ?? 0
+      setScrapeResult({
+        success: successCount,
+        failed: result.failed?.length ?? 0,
+        total: result.total ?? 0,
+      })
+      if (successCount > 0) {
+        import("@/lib/sounds").then(({ playSiuuuSound }) => playSiuuuSound())
+      }
+      await refreshAlumni()
+    } catch (err: any) {
+      const isAuthError = err?.message?.includes("LINKEDIN_AUTH_REQUIRED")
+      if (isAuthError) {
+        import("@/lib/sounds").then(({ playFaaaaSound }) => playFaaaaSound())
+        setLinkedinAuthStatus("authenticating")
+        try {
+          const res = await fetch("/api/linkedin-auth", { method: "POST" })
+          if (!res.ok) throw new Error("Auth failed")
+          setLinkedinAuthStatus("success")
+        } catch {
+          setLinkedinAuthStatus("failed")
+        }
+      } else {
+        console.error("Failed to scrape alumni", err)
+        setScrapeResult({ success: 0, failed: 0, total: 0 })
+      }
+    } finally {
+      setScraping(false)
+    }
+  }
+
+  const CSV_HEADERS = "email,first_name,last_name,graduation_year,diploma,linkedin_url,current_title,current_company,city"
+
+  const handleExport = () => {
+    const rows = [CSV_HEADERS]
+    data.forEach((a) => {
+      const escape = (v: string | number | undefined) => {
+        const s = String(v ?? "")
+        return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s
+      }
+      rows.push(
+        [
+          escape(a.email),
+          escape(a.firstName),
+          escape(a.lastName),
+          escape(a.promoYear),
+          escape(a.diploma),
+          escape(a.linkedinUrl),
+          escape(a.currentJob),
+          escape(a.currentCompany),
+          escape(a.city),
+        ].join(",")
+      )
+    })
+    const blob = new Blob(["\uFEFF" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `alumni-export-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function parseCSVLine(line: string): string[] {
+    const out: string[] = []
+    let cur = ""
+    let inQuotes = false
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i]
+      if (c === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"'
+          i++
+        } else inQuotes = !inQuotes
+      } else if ((c === "," && !inQuotes) || c === "\r") {
+        out.push(cur.trim())
+        cur = ""
+      } else if (c !== "\r") cur += c
+    }
+    out.push(cur.trim())
+    return out
+  }
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    setImporting(true)
+    setImportResult(null)
+    const text = await file.text()
+    const lines = text.split(/\n/).filter((l) => l.trim())
+    if (lines.length < 2) {
+      setImportResult({ success: 0, failed: 0, errors: ["Fichier vide ou sans lignes de donnees."] })
+      setImporting(false)
+      return
+    }
+    const header = parseCSVLine(lines[0].trim())
+    const emailIdx = header.findIndex((h) => /email/i.test(h))
+    const firstIdx = header.findIndex((h) => /first|prenom/i.test(h))
+    const lastIdx = header.findIndex((h) => /last|nom/i.test(h))
+    const yearIdx = header.findIndex((h) => /year|promo|annee|graduation/i.test(h))
+    const diplomaIdx = header.findIndex((h) => /diploma|diplome/i.test(h))
+    const linkedinIdx = header.findIndex((h) => /linkedin/i.test(h))
+    const titleIdx = header.findIndex((h) => /title|poste|job/i.test(h))
+    const companyIdx = header.findIndex((h) => /company|entreprise/i.test(h))
+    const cityIdx = header.findIndex((h) => /city|ville/i.test(h))
+
+    if (emailIdx === -1) {
+      setImportResult({ success: 0, failed: 0, errors: ["Colonne email requise (header: email)."] })
+      setImporting(false)
+      return
+    }
+
+    let success = 0
+    const errors: string[] = []
+    const { adminApi } = await import("@/lib/api/admin")
+
+    for (let i = 1; i < lines.length; i++) {
+      const cells = parseCSVLine(lines[i])
+      const email = (cells[emailIdx] ?? "").trim()
+      if (!email) continue
+      const first_name = (firstIdx >= 0 ? cells[firstIdx] : "").trim() || undefined
+      const last_name = (lastIdx >= 0 ? cells[lastIdx] : "").trim() || undefined
+      const graduation_year = yearIdx >= 0 && cells[yearIdx] ? parseInt(cells[yearIdx], 10) : undefined
+      const diploma = (diplomaIdx >= 0 ? cells[diplomaIdx] : "").trim() || undefined
+      const linkedin_url = (linkedinIdx >= 0 ? cells[linkedinIdx] : "").trim() || undefined
+      const current_title = (titleIdx >= 0 ? cells[titleIdx] : "").trim() || undefined
+      const current_company = (companyIdx >= 0 ? cells[companyIdx] : "").trim() || undefined
+      const city = (cityIdx >= 0 ? cells[cityIdx] : "").trim() || undefined
+
+      try {
+        await adminApi.createAlumni({
+          email,
+          first_name: first_name || undefined,
+          last_name: last_name || undefined,
+          graduation_year: !isNaN(graduation_year!) && graduation_year! > 1900 ? graduation_year : undefined,
+          diploma,
+          linkedin_url,
+          current_title,
+          current_company,
+          city,
+          role: "ALUMNI",
+        })
+        success++
+      } catch (err: any) {
+        errors.push(`Ligne ${i + 1} (${email}): ${err?.message || String(err)}`)
+      }
+    }
+
+    setImportResult({
+      success,
+      failed: errors.length,
+      errors: errors.slice(0, 10),
+    })
+    if (success > 0) await refreshAlumni()
+    setImporting(false)
   }
 
   const diplomas = useMemo(() => Array.from(new Set(data.map((a) => a.diploma))).filter(Boolean), [data])
@@ -202,14 +386,6 @@ export function AlumniDirectory() {
 
   if (initialLoading) {
     return <div className="p-8 text-center text-muted-foreground">Chargement de l'annuaire...</div>
-  }
-
-  if (data.length === 0 && !initialLoading) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        Aucun alumni trouve ou erreur de connexion au serveur.
-      </div>
-    )
   }
 
   if (selectedAlumni) {
@@ -359,11 +535,40 @@ export function AlumniDirectory() {
           </Dialog>}
           {isAdmin && (
             <>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Upload className="w-4 h-4" />
-                <span className="hidden sm:inline">Importer CSV</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleScrapeAll}
+                disabled={scraping}
+              >
+                {scraping ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Linkedin className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {scraping ? "Scraping en cours..." : "Scraper LinkedIn"}
+                </span>
               </Button>
-              <Button variant="outline" size="sm" className="gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+              >
+                {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                <span className="hidden sm:inline">{importing ? "Import..." : "Importer CSV"}</span>
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleExport} disabled={data.length === 0}>
                 <Download className="w-4 h-4" />
                 <span className="hidden sm:inline">Exporter</span>
               </Button>
@@ -371,6 +576,79 @@ export function AlumniDirectory() {
           )}
         </div>
       </div>
+
+      {linkedinAuthStatus !== "idle" && (
+        <Card className={`p-4 border ${linkedinAuthStatus === "failed" ? "border-destructive bg-destructive/10" : linkedinAuthStatus === "success" ? "border-accent bg-accent/10" : "border-primary bg-primary/10"}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {linkedinAuthStatus === "authenticating" && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+              <p className="text-sm text-foreground font-medium">
+                {linkedinAuthStatus === "authenticating"
+                  ? "FAAAAAAA ! Les cookies LinkedIn ont expire. Re-authentification en cours... Un navigateur va s'ouvrir."
+                  : linkedinAuthStatus === "success"
+                  ? "Re-authentification LinkedIn reussie ! Vous pouvez relancer le scraping."
+                  : "Echec de la re-authentification. Relancez manuellement le script d'authentification LinkedIn."}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {linkedinAuthStatus === "success" && (
+                <Button size="sm" onClick={() => { setLinkedinAuthStatus("idle"); handleScrapeAll() }}>
+                  Relancer le scraping
+                </Button>
+              )}
+              {linkedinAuthStatus === "failed" && (
+                <Button size="sm" variant="outline" onClick={handleLinkedinReAuth}>
+                  Reessayer
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => setLinkedinAuthStatus("idle")}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {scrapeResult && (
+        <Card className="p-4 border border-border bg-muted/30">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-foreground">
+              Scraping termine : <strong>{scrapeResult.success}</strong> reussi(s),{" "}
+              <strong>{scrapeResult.failed}</strong> echoue(s) sur{" "}
+              <strong>{scrapeResult.total}</strong> alumni.
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => setScrapeResult(null)}>
+              Fermer
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {importResult && (
+        <Card className="p-4 border border-border bg-muted/30">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-foreground font-medium">
+                Import termine : <strong>{importResult.success}</strong> importe(s),{" "}
+                <strong>{importResult.failed}</strong> erreur(s).
+              </p>
+              <Button variant="ghost" size="sm" onClick={() => setImportResult(null)}>
+                Fermer
+              </Button>
+            </div>
+            {importResult.errors.length > 0 && (
+              <ul className="text-xs text-muted-foreground list-disc list-inside">
+                {importResult.errors.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+                {importResult.failed > 10 && (
+                  <li>... et {importResult.failed - 10} autre(s) erreur(s)</li>
+                )}
+              </ul>
+            )}
+          </div>
+        </Card>
+      )}
 
       <Card className="p-4 border border-border">
         <div className="flex flex-col md:flex-row gap-3">
@@ -452,6 +730,13 @@ export function AlumniDirectory() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  Aucun alumni trouve.
+                </TableCell>
+              </TableRow>
+            )}
             {filtered.map((alumni) => (
               <TableRow key={alumni.id} className="group">
                 <TableCell>
